@@ -2,16 +2,16 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 /**
- * PUT /api/profiles/:id - Update profile
- * Updates a profile's name
+ * GET /api/profiles/:id/entries - Get all entries for a profile
+ * Returns all financial entries for the specified profile, ordered by date descending
  */
-export async function PUT(
+export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: profileId } = await params;
-    
+
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -43,16 +43,8 @@ export async function PUT(
         { status: 401 }
       );
     }
-    const { name } = await request.json();
 
-    if (!name || typeof name !== 'string' || name.trim().length === 0) {
-      return NextResponse.json(
-        { error: 'Profile name is required' },
-        { status: 400 }
-      );
-    }
-
-    // Check if user has edit permission for this profile
+    // Check if user has access to this profile
     const { data: userProfile } = await supabase
       .from('user_profiles')
       .select('role')
@@ -62,41 +54,40 @@ export async function PUT(
     const isAdmin = userProfile?.role === 'admin';
 
     if (!isAdmin) {
-      // Check if user has edit permission
+      // Check if user has link to this profile
       const { data: link } = await supabase
         .from('user_profile_links')
-        .select('permission')
+        .select('id')
         .eq('user_id', user.id)
         .eq('profile_id', profileId)
         .single();
 
-      if (!link || link.permission !== 'edit') {
+      if (!link) {
         return NextResponse.json(
-          { error: 'Insufficient permissions to update this profile' },
+          { error: 'Access denied to this profile' },
           { status: 403 }
         );
       }
     }
 
-    // Update the profile
-    const { data: profile, error: updateError } = await supabase
-      .from('profiles')
-      .update({ name: name.trim(), updated_at: new Date().toISOString() })
-      .eq('id', profileId)
-      .select()
-      .single();
+    // Fetch all entries for the profile
+    const { data: entries, error } = await supabase
+      .from('financial_entries')
+      .select('*')
+      .eq('profile_id', profileId)
+      .order('entry_date', { ascending: false });
 
-    if (updateError) {
-      console.error('Error updating profile:', updateError);
+    if (error) {
+      console.error('Error fetching entries:', error);
       return NextResponse.json(
-        { error: 'Failed to update profile' },
+        { error: 'Failed to fetch entries' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ profile });
+    return NextResponse.json({ entries: entries || [] });
   } catch (error) {
-    console.error('Error in PUT /api/profiles/:id:', error);
+    console.error('Error in GET /api/profiles/:id/entries:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -105,16 +96,16 @@ export async function PUT(
 }
 
 /**
- * DELETE /api/profiles/:id - Delete profile
- * Deletes a profile and all associated data (cascades to financial_entries and user_profile_links)
+ * POST /api/profiles/:id/entries - Create new entry for a profile
+ * Creates a new financial entry for the specified profile
  */
-export async function DELETE(
+export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: profileId } = await params;
-    
+
     // Get the authorization header
     const authHeader = request.headers.get('authorization');
     if (!authHeader) {
@@ -157,7 +148,7 @@ export async function DELETE(
     const isAdmin = userProfile?.role === 'admin';
 
     if (!isAdmin) {
-      // Check if user has edit permission
+      // Check if user has edit permission for this profile
       const { data: link } = await supabase
         .from('user_profile_links')
         .select('permission')
@@ -167,29 +158,63 @@ export async function DELETE(
 
       if (!link || link.permission !== 'edit') {
         return NextResponse.json(
-          { error: 'Insufficient permissions to delete this profile' },
+          { error: 'Edit permission required for this profile' },
           { status: 403 }
         );
       }
     }
 
-    // Delete the profile (cascades to financial_entries and user_profile_links)
-    const { error: deleteError } = await supabase
-      .from('profiles')
-      .delete()
-      .eq('id', profileId);
+    const body = await request.json();
+    const { entry_date, high_medium_risk, low_risk } = body;
 
-    if (deleteError) {
-      console.error('Error deleting profile:', deleteError);
+    // Validate required fields
+    if (!entry_date) {
       return NextResponse.json(
-        { error: 'Failed to delete profile' },
+        { error: 'Entry date is required' },
+        { status: 400 }
+      );
+    }
+
+    // Create the entry
+    const { data: entry, error } = await supabase
+      .from('financial_entries')
+      .insert({
+        profile_id: profileId,
+        entry_date,
+        direct_equity: high_medium_risk?.direct_equity || 0,
+        esops: high_medium_risk?.esops || 0,
+        equity_pms: high_medium_risk?.equity_pms || 0,
+        ulip: high_medium_risk?.ulip || 0,
+        real_estate: high_medium_risk?.real_estate || 0,
+        real_estate_funds: high_medium_risk?.real_estate_funds || 0,
+        private_equity: high_medium_risk?.private_equity || 0,
+        equity_mutual_funds: high_medium_risk?.equity_mutual_funds || 0,
+        structured_products_equity: high_medium_risk?.structured_products_equity || 0,
+        bank_balance: low_risk?.bank_balance || 0,
+        debt_mutual_funds: low_risk?.debt_mutual_funds || 0,
+        endowment_plans: low_risk?.endowment_plans || 0,
+        fixed_deposits: low_risk?.fixed_deposits || 0,
+        nps: low_risk?.nps || 0,
+        epf: low_risk?.epf || 0,
+        ppf: low_risk?.ppf || 0,
+        structured_products_debt: low_risk?.structured_products_debt || 0,
+        gold_etfs_funds: low_risk?.gold_etfs_funds || 0,
+        created_by: user.id,
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating entry:', error);
+      return NextResponse.json(
+        { error: 'Failed to create entry' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ entry }, { status: 201 });
   } catch (error) {
-    console.error('Error in DELETE /api/profiles/:id:', error);
+    console.error('Error in POST /api/profiles/:id/entries:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

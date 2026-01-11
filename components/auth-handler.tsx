@@ -33,13 +33,6 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
       async (event, session) => {
         if (event === 'SIGNED_OUT') {
           router.push('/auth/login');
-        } else if (event === 'SIGNED_IN' && session) {
-          // Show a welcome message
-          toast({
-            title: 'Welcome!',
-            description: 'You have successfully signed in.',
-            duration: 3000,
-          });
         }
       }
     );

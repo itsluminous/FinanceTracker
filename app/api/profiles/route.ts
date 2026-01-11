@@ -1,12 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-// Create Supabase client
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL!,
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-);
-
 /**
  * GET /api/profiles - Get user's linked profiles
  * Returns all profiles the authenticated user has access to
@@ -22,8 +16,20 @@ export async function GET(request: Request) {
       );
     }
 
-    // Set the auth token for this request
+    // Create Supabase client with the user's access token
     const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
@@ -101,8 +107,21 @@ export async function POST(request: Request) {
       );
     }
 
-    // Set the auth token for this request
+    // Create Supabase client with the user's access token
+    // This allows RLS policies to work correctly with auth.uid()
     const token = authHeader.replace('Bearer ', '');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        global: {
+          headers: {
+            Authorization: authHeader,
+          },
+        },
+      }
+    );
+
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
 
     if (authError || !user) {
@@ -113,15 +132,28 @@ export async function POST(request: Request) {
     }
 
     // Check if user is approved
-    const { data: userProfile } = await supabase
+    const { data: userProfile, error: userProfileError } = await supabase
       .from('user_profiles')
       .select('role')
       .eq('id', user.id)
       .single();
 
+    console.log('User profile query result:', { userProfile, userProfileError, userId: user.id });
+
     if (!userProfile || !['admin', 'approved'].includes(userProfile.role)) {
       return NextResponse.json(
-        { error: 'User not authorized to create profiles' },
+        { 
+          error: 'User not authorized to create profiles',
+          debug: {
+            userProfile,
+            userProfileError: userProfileError ? {
+              message: userProfileError.message,
+              code: userProfileError.code,
+              details: userProfileError.details,
+            } : null,
+            userId: user.id,
+          }
+        },
         { status: 403 }
       );
     }
