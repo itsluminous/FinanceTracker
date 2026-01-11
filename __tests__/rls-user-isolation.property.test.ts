@@ -1,9 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 
-// Feature: personal-finance-tracker, Property 12: RLS user isolation
-// Validates: Requirements 10.6
-
 // Types for mock data
 interface MockUserProfile {
   id: string;
@@ -64,7 +61,7 @@ vi.mock('@supabase/supabase-js', () => {
       from: vi.fn((table: string) => {
         if (table === 'profiles') {
           return {
-            select: vi.fn((_fields?: string) => ({
+            select: vi.fn(() => ({
               // RLS check: Users can only view profiles they're linked to (unless admin)
               then: vi.fn(async (resolve: (value: { data: MockProfile[]; error: { message: string } | null }) => void) => {
                 if (!currentUserId) {
@@ -91,7 +88,7 @@ vi.mock('@supabase/supabase-js', () => {
         
         if (table === 'financial_entries') {
           return {
-            select: vi.fn((_fields?: string) => ({
+            select: vi.fn(() => ({
               // RLS check: Users can only view entries for linked profiles (unless admin)
               then: vi.fn(async (resolve: (value: { data: MockFinancialEntry[]; error: { message: string } | null }) => void) => {
                 if (!currentUserId) {

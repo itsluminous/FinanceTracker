@@ -10,6 +10,12 @@
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+  
+  /* Responsive breakpoints (Tailwind v4 defaults)
+   * Mobile: < 640px (default, no prefix)
+   * Tablet: sm (640px) to lg (1024px)
+   * Desktop: lg (1024px) and above
+   */
 }
 
 @media (prefers-color-scheme: dark) {
@@ -23,4 +29,166 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Responsive utility classes */
+@layer utilities {
+  /* Mobile-first approach - base styles apply to mobile */
+  .mobile-only {
+    @media (min-width: 640px) {
+      display: none;
+    }
+  }
+  
+  .tablet-only {
+    display: none;
+    @media (min-width: 640px) and (max-width: 1023px) {
+      display: block;
+    }
+  }
+  
+  .desktop-only {
+    display: none;
+    @media (min-width: 1024px) {
+      display: block;
+    }
+  }
+  
+  /* Smooth transitions for responsive changes */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* Page transitions and animations */
+@layer base {
+  /* Fade in animation for page loads */
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+  
+  @keyframes slideIn {
+    from {
+      opacity: 0;
+      transform: translateX(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+  
+  @keyframes scaleIn {
+    from {
+      opacity: 0;
+      transform: scale(0.95);
+    }
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+  
+  /* Chart loading animation */
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  /* Apply fade-in to main content areas */
+  main {
+    animation: fadeIn 0.4s ease-out;
+  }
+  
+  /* Form field animations */
+  input:focus,
+  textarea:focus,
+  select:focus {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  /* Button hover animations */
+  button {
+    transition: all 0.2s ease-in-out;
+  }
+  
+  button:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+  
+  /* Card animations */
+  [class*="card"] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  /* Loading skeleton animation */
+  .skeleton {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    background: linear-gradient(
+      90deg,
+      rgba(229, 231, 235, 1) 0%,
+      rgba(243, 244, 246, 1) 50%,
+      rgba(229, 231, 235, 1) 100%
+    );
+    background-size: 200% 100%;
+  }
+  
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+  
+  .skeleton {
+    animation: shimmer 2s infinite;
+  }
+}
+
+/* Chart-specific animations */
+@layer components {
+  .chart-container {
+    animation: scaleIn 0.5s ease-out;
+  }
+  
+  .chart-loading {
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+  
+  /* Smooth transitions for collapsible sections */
+  .collapsible-content {
+    transition: max-height 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                padding 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .collapsible-content.collapsed {
+    max-height: 0;
+    opacity: 0;
+    padding-top: 0;
+    padding-bottom: 0;
+    overflow: hidden;
+  }
+  
+  .collapsible-content.expanded {
+    max-height: 5000px;
+    opacity: 1;
+  }
 }

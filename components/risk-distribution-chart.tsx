@@ -22,13 +22,13 @@ export function RiskDistributionChart({
 }: RiskDistributionChartProps) {
   if (!data || data.length === 0) {
     return (
-      <Card>
+      <Card className="chart-container">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
+          <div className="flex h-[250px] sm:h-[300px] items-center justify-center text-xs sm:text-sm text-gray-500">
             No data available
           </div>
         </CardContent>
@@ -51,13 +51,13 @@ export function RiskDistributionChart({
   };
 
   return (
-    <Card>
+    <Card className="chart-container">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
+        <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
           <PieChart>
             <Pie
               data={data}
@@ -68,6 +68,9 @@ export function RiskDistributionChart({
               outerRadius={80}
               fill="#8884d8"
               dataKey="value"
+              animationBegin={0}
+              animationDuration={800}
+              animationEasing="ease-out"
             >
               {data.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[entry.name as keyof typeof COLORS]} />
@@ -78,24 +81,25 @@ export function RiskDistributionChart({
               contentStyle={{
                 backgroundColor: 'white',
                 border: '1px solid #e5e7eb',
-                borderRadius: '0.375rem'
+                borderRadius: '0.375rem',
+                fontSize: '0.875rem'
               }}
             />
             <Legend 
               verticalAlign="bottom" 
               height={36}
-              formatter={(value) => <span className="text-sm">{value}</span>}
+              formatter={(value) => <span className="text-xs sm:text-sm">{value}</span>}
             />
           </PieChart>
         </ResponsiveContainer>
         
         {/* Summary below chart */}
-        <div className="mt-4 space-y-2 border-t pt-4">
+        <div className="mt-3 sm:mt-4 space-y-2 border-t pt-3 sm:pt-4">
           {data.map((item, index) => (
-            <div key={index} className="flex items-center justify-between text-sm">
+            <div key={index} className="flex items-center justify-between text-xs sm:text-sm">
               <div className="flex items-center gap-2">
                 <div 
-                  className="h-3 w-3 rounded-full" 
+                  className="h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full" 
                   style={{ backgroundColor: COLORS[item.name as keyof typeof COLORS] }}
                 />
                 <span className="text-gray-700">{item.name}</span>

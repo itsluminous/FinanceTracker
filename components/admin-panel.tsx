@@ -11,6 +11,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface PendingUser {
   id: string;
@@ -31,6 +32,7 @@ export function AdminPanel() {
   const [processingUserId, setProcessingUserId] = useState<string | null>(null);
   const [selectedRoles, setSelectedRoles] = useState<Record<string, string>>({});
   const [selectedProfiles, setSelectedProfiles] = useState<Record<string, string[]>>({});
+  const [expandedUsers, setExpandedUsers] = useState<Record<string, boolean>>({});
   const { toast } = useToast();
 
   const loadData = useCallback(async () => {
@@ -82,6 +84,13 @@ export function AdminPanel() {
           : [...userProfiles, profileId],
       };
     });
+  };
+
+  const toggleUserExpanded = (userId: string) => {
+    setExpandedUsers(prev => ({
+      ...prev,
+      [userId]: !prev[userId],
+    }));
   };
 
   const handleApprove = async (userId: string) => {
@@ -187,111 +196,139 @@ export function AdminPanel() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-8">
+      <div className="flex items-center justify-center p-6 sm:p-8">
         <div className="text-center">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
+          <p className="mt-4 text-sm sm:text-base text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       <Card>
-        <CardHeader>
-          <CardTitle>Pending User Approvals</CardTitle>
-          <CardDescription>
+        <CardHeader className="p-4 sm:p-6">
+          <CardTitle className="text-lg sm:text-xl">Pending User Approvals</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">
             Review and approve or reject new user registrations
           </CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="p-4 sm:p-6">
           {pendingUsers.length === 0 ? (
-            <div className="text-center py-8 text-gray-500">
+            <div className="text-center py-6 sm:py-8 text-sm sm:text-base text-gray-500">
               No pending user approvals
             </div>
           ) : (
-            <div className="space-y-6">
-              {pendingUsers.map(user => (
-                <div
-                  key={user.id}
-                  className="border rounded-lg p-4 space-y-4"
-                >
-                  <div className="flex items-start justify-between">
-                    <div>
-                      <h3 className="font-semibold text-gray-900">{user.email}</h3>
-                      <p className="text-sm text-gray-500">
-                        Signed up: {new Date(user.created_at).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div>
-                      <label className="text-sm font-medium text-gray-700 block mb-2">
-                        Assign Role
-                      </label>
-                      <Select
-                        value={selectedRoles[user.id] || 'approved'}
-                        onValueChange={(value) => handleRoleChange(user.id, value)}
-                      >
-                        <SelectTrigger className="w-full">
-                          <SelectValue placeholder="Select role" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="approved">Approved (Edit Access)</SelectItem>
-                          <SelectItem value="admin">Admin (Full Access)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-
-                    {profiles.length > 0 && (
-                      <div>
-                        <label className="text-sm font-medium text-gray-700 block mb-2">
-                          Link to Existing Profiles (Optional)
-                        </label>
-                        <div className="space-y-2 max-h-40 overflow-y-auto border rounded-md p-3">
-                          {profiles.map(profile => (
-                            <label
-                              key={profile.id}
-                              className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-2 rounded"
-                            >
-                              <input
-                                type="checkbox"
-                                checked={(selectedProfiles[user.id] || []).includes(profile.id)}
-                                onChange={() => handleProfileToggle(user.id, profile.id)}
-                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                              />
-                              <span className="text-sm text-gray-700">{profile.name}</span>
-                            </label>
-                          ))}
-                        </div>
-                        <p className="text-xs text-gray-500 mt-1">
-                          Select profiles to grant access. User can create new profiles if none selected.
+            <div className="space-y-4 sm:space-y-6">
+              {pendingUsers.map(user => {
+                const isExpanded = expandedUsers[user.id] ?? true;
+                
+                return (
+                  <div
+                    key={user.id}
+                    className="border rounded-lg overflow-hidden transition-smooth"
+                  >
+                    {/* Mobile: Collapsible header, Desktop: Always visible */}
+                    <button
+                      type="button"
+                      onClick={() => toggleUserExpanded(user.id)}
+                      className="w-full flex items-start justify-between p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+                    >
+                      <div className="text-left">
+                        <h3 className="font-semibold text-sm sm:text-base text-gray-900 break-all">
+                          {user.email}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-gray-500 mt-1">
+                          Signed up: {new Date(user.created_at).toLocaleDateString()}
                         </p>
                       </div>
-                    )}
-                  </div>
+                      <span className="sm:hidden ml-2 flex-shrink-0">
+                        {isExpanded ? (
+                          <ChevronUp className="h-5 w-5" />
+                        ) : (
+                          <ChevronDown className="h-5 w-5" />
+                        )}
+                      </span>
+                    </button>
 
-                  <div className="flex gap-3 pt-2">
-                    <Button
-                      onClick={() => handleApprove(user.id)}
-                      disabled={processingUserId === user.id}
-                      className="flex-1"
+                    {/* Collapsible content */}
+                    <div
+                      className={`p-3 sm:p-4 space-y-3 sm:space-y-4 transition-all duration-300 ${
+                        isExpanded ? 'block' : 'hidden sm:block'
+                      }`}
                     >
-                      {processingUserId === user.id ? 'Processing...' : 'Approve'}
-                    </Button>
-                    <Button
-                      onClick={() => handleReject(user.id)}
-                      disabled={processingUserId === user.id}
-                      variant="destructive"
-                      className="flex-1"
-                    >
-                      {processingUserId === user.id ? 'Processing...' : 'Reject'}
-                    </Button>
+                      <div>
+                        <label className="text-xs sm:text-sm font-medium text-gray-700 block mb-2">
+                          Assign Role
+                        </label>
+                        <Select
+                          value={selectedRoles[user.id] || 'approved'}
+                          onValueChange={(value) => handleRoleChange(user.id, value)}
+                        >
+                          <SelectTrigger className="w-full text-sm">
+                            <SelectValue placeholder="Select role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="approved">Approved (Edit Access)</SelectItem>
+                            <SelectItem value="admin">Admin (Full Access)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {profiles.length > 0 && (
+                        <div>
+                          <label className="text-xs sm:text-sm font-medium text-gray-700 block mb-2">
+                            Link to Existing Profiles (Optional)
+                          </label>
+                          <div className="space-y-2 max-h-32 sm:max-h-40 overflow-y-auto border rounded-md p-2 sm:p-3">
+                            {profiles.map(profile => (
+                              <label
+                                key={profile.id}
+                                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1.5 sm:p-2 rounded"
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={(selectedProfiles[user.id] || []).includes(profile.id)}
+                                  onChange={() => handleProfileToggle(user.id, profile.id)}
+                                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 flex-shrink-0"
+                                />
+                                <span className="text-xs sm:text-sm text-gray-700 break-all">
+                                  {profile.name}
+                                </span>
+                              </label>
+                            ))}
+                          </div>
+                          <p className="text-[10px] sm:text-xs text-gray-500 mt-1">
+                            Select profiles to grant access. User can create new profiles if none selected.
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Action buttons */}
+                      <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 pt-2">
+                        <Button
+                          onClick={() => handleApprove(user.id)}
+                          disabled={processingUserId === user.id}
+                          className="w-full sm:flex-1 text-sm"
+                          size="sm"
+                        >
+                          {processingUserId === user.id ? 'Processing...' : 'Approve'}
+                        </Button>
+                        <Button
+                          onClick={() => handleReject(user.id)}
+                          disabled={processingUserId === user.id}
+                          variant="destructive"
+                          className="w-full sm:flex-1 text-sm"
+                          size="sm"
+                        >
+                          {processingUserId === user.id ? 'Processing...' : 'Reject'}
+                        </Button>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>

@@ -75,7 +75,7 @@ describe('Property Test: Total Calculation Accuracy', () => {
 
   it('should handle zero values correctly', () => {
     fc.assert(
-      fc.property(highMediumRiskAssetsArbitrary, (_assets) => {
+      fc.property(highMediumRiskAssetsArbitrary, () => {
         // Set all values to zero
         const zeroAssets: HighMediumRiskAssets = {
           direct_equity: 0,

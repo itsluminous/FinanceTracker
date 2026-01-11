@@ -5,8 +5,7 @@ import {
   transformToChartData,
   calculateRiskDistribution,
   aggregateCombinedPortfolio,
-  filterCombinedPortfolioByPeriod,
-  TimePeriod
+  filterCombinedPortfolioByPeriod
 } from '../lib/analytics';
 import { FinancialEntry } from '../lib/types';
 

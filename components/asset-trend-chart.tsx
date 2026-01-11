@@ -11,6 +11,39 @@ interface AssetTrendChartProps {
   showRiskBreakdown?: boolean;
 }
 
+interface TooltipPayload {
+  name: string;
+  value: number;
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
+// Custom tooltip component defined outside render
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="rounded-lg border bg-white p-2 sm:p-3 shadow-lg">
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-gray-900">{label}</p>
+        {payload.map((entry, index: number) => (
+          <p key={index} className="text-xs sm:text-sm" style={{ color: entry.color }}>
+            {entry.name}: {new Intl.NumberFormat('en-IN', {
+              style: 'currency',
+              currency: 'INR',
+              maximumFractionDigits: 0
+            }).format(entry.value)}
+          </p>
+        ))}
+      </div>
+    );
+  }
+  return null;
+};
+
 export function AssetTrendChart({ 
   data, 
   title = 'Asset Trends',
@@ -19,13 +52,13 @@ export function AssetTrendChart({
 }: AssetTrendChartProps) {
   if (!data || data.length === 0) {
     return (
-      <Card>
+      <Card className="chart-container">
         <CardHeader>
-          <CardTitle>{title}</CardTitle>
-          <CardDescription>{description}</CardDescription>
+          <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
+          <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex h-[300px] items-center justify-center text-sm text-gray-500">
+          <div className="flex h-[250px] sm:h-[300px] items-center justify-center text-xs sm:text-sm text-gray-500">
             No data available
           </div>
         </CardContent>
@@ -44,50 +77,32 @@ export function AssetTrendChart({
     }).format(value);
   };
 
-  // Custom tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="rounded-lg border bg-white p-3 shadow-lg">
-          <p className="mb-2 font-medium text-gray-900">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <p key={index} className="text-sm" style={{ color: entry.color }}>
-              {entry.name}: {new Intl.NumberFormat('en-IN', {
-                style: 'currency',
-                currency: 'INR',
-                maximumFractionDigits: 0
-              }).format(entry.value)}
-            </p>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
-
   return (
-    <Card>
+    <Card className="chart-container">
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
+        <CardTitle className="text-base sm:text-lg">{title}</CardTitle>
+        <CardDescription className="text-xs sm:text-sm">{description}</CardDescription>
       </CardHeader>
       <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={data} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+        <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
+          <LineChart data={data} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
             <XAxis 
               dataKey="date" 
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
+              className="sm:text-xs"
               stroke="#6b7280"
             />
             <YAxis 
               tickFormatter={formatCurrency}
-              tick={{ fontSize: 12 }}
+              tick={{ fontSize: 10 }}
+              className="sm:text-xs"
               stroke="#6b7280"
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend 
-              wrapperStyle={{ fontSize: '14px' }}
+              wrapperStyle={{ fontSize: '12px' }}
+              className="sm:text-sm"
               iconType="line"
             />
             <Line 
@@ -96,8 +111,11 @@ export function AssetTrendChart({
               stroke="#3b82f6" 
               strokeWidth={2}
               name="Total Assets"
-              dot={{ r: 4 }}
-              activeDot={{ r: 6 }}
+              dot={{ r: 3 }}
+              activeDot={{ r: 5 }}
+              animationBegin={0}
+              animationDuration={1000}
+              animationEasing="ease-in-out"
             />
             {showRiskBreakdown && (
               <>
@@ -107,8 +125,11 @@ export function AssetTrendChart({
                   stroke="#ef4444" 
                   strokeWidth={2}
                   name="High/Medium Risk"
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  dot={{ r: 2 }}
+                  activeDot={{ r: 4 }}
+                  animationBegin={200}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
                 />
                 <Line 
                   type="monotone" 
@@ -116,8 +137,11 @@ export function AssetTrendChart({
                   stroke="#22c55e" 
                   strokeWidth={2}
                   name="Low Risk"
-                  dot={{ r: 3 }}
-                  activeDot={{ r: 5 }}
+                  dot={{ r: 2 }}
+                  activeDot={{ r: 4 }}
+                  animationBegin={400}
+                  animationDuration={1000}
+                  animationEasing="ease-in-out"
                 />
               </>
             )}
@@ -126,25 +150,26 @@ export function AssetTrendChart({
         
         {/* Summary statistics */}
         {data.length > 0 && (
-          <div className="mt-4 grid grid-cols-2 gap-4 border-t pt-4 sm:grid-cols-3">
+          <div className="mt-3 sm:mt-4 grid grid-cols-2 gap-3 sm:gap-4 border-t pt-3 sm:pt-4 sm:grid-cols-3">
             <div>
-              <p className="text-xs text-gray-500">Latest Value</p>
-              <p className="text-lg font-semibold text-gray-900">
+              <p className="text-[10px] sm:text-xs text-gray-500">Latest Value</p>
+              <p className="text-sm sm:text-lg font-semibold text-gray-900">
                 {new Intl.NumberFormat('en-IN', {
                   style: 'currency',
                   currency: 'INR',
-                  maximumFractionDigits: 0
+                  maximumFractionDigits: 0,
+                  notation: 'compact'
                 }).format(data[data.length - 1].total_assets)}
               </p>
             </div>
             <div>
-              <p className="text-xs text-gray-500">Data Points</p>
-              <p className="text-lg font-semibold text-gray-900">{data.length}</p>
+              <p className="text-[10px] sm:text-xs text-gray-500">Data Points</p>
+              <p className="text-sm sm:text-lg font-semibold text-gray-900">{data.length}</p>
             </div>
             {data.length > 1 && (
               <div className="col-span-2 sm:col-span-1">
-                <p className="text-xs text-gray-500">Change</p>
-                <p className={`text-lg font-semibold ${
+                <p className="text-[10px] sm:text-xs text-gray-500">Change</p>
+                <p className={`text-sm sm:text-lg font-semibold ${
                   data[data.length - 1].total_assets >= data[0].total_assets 
                     ? 'text-green-600' 
                     : 'text-red-600'

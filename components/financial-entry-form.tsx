@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { AssetCategorySection } from './asset-category-section';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
@@ -9,6 +8,7 @@ import { Label } from './ui/label';
 import { HighMediumRiskAssets, LowRiskAssets } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { ChevronDown, ChevronUp } from 'lucide-react';
 
 interface FinancialEntryFormProps {
   profileId: string;
@@ -44,6 +44,10 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLatest, setIsLoadingLatest] = useState(true);
+  
+  // Collapsible sections state for mobile
+  const [highMediumRiskExpanded, setHighMediumRiskExpanded] = useState(true);
+  const [lowRiskExpanded, setLowRiskExpanded] = useState(true);
 
   // Calculate totals
   const totalHighMediumRisk = Object.values(highMediumRisk).reduce(
@@ -244,22 +248,119 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
               value={entryDate}
               onChange={(e) => setEntryDate(e.target.value)}
               required
+              className="w-full"
             />
           </div>
 
-          {/* High/Medium Risk Assets */}
-          <AssetCategorySection
-            title="High/Medium Risk Assets"
-            fields={highMediumRiskFields}
-            onChange={handleHighMediumRiskChange}
-          />
+          {/* High/Medium Risk Assets - Collapsible on mobile */}
+          <div className="border rounded-lg overflow-hidden transition-smooth">
+            <button
+              type="button"
+              onClick={() => setHighMediumRiskExpanded(!highMediumRiskExpanded)}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+            >
+              <h3 className="text-lg font-semibold">High/Medium Risk Assets</h3>
+              <span className="sm:hidden">
+                {highMediumRiskExpanded ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </span>
+            </button>
+            <div
+              className={`p-4 transition-all duration-300 ${
+                highMediumRiskExpanded ? 'block' : 'hidden sm:block'
+              }`}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {highMediumRiskFields.map((field) => (
+                  <div key={field.name} className="space-y-2">
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id={field.name}
+                        type="text"
+                        inputMode="decimal"
+                        value={field.value === 0 ? '' : field.value.toString()}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          if (inputValue === '') {
+                            handleHighMediumRiskChange(field.name, 0);
+                            return;
+                          }
+                          const decimalRegex = /^\d*\.?\d{0,2}$/;
+                          if (!decimalRegex.test(inputValue)) return;
+                          const numericValue = parseFloat(inputValue) || 0;
+                          handleHighMediumRiskChange(field.name, numericValue);
+                        }}
+                        className="pl-8"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
-          {/* Low Risk Assets */}
-          <AssetCategorySection
-            title="Low Risk Assets"
-            fields={lowRiskFields}
-            onChange={handleLowRiskChange}
-          />
+          {/* Low Risk Assets - Collapsible on mobile */}
+          <div className="border rounded-lg overflow-hidden transition-smooth">
+            <button
+              type="button"
+              onClick={() => setLowRiskExpanded(!lowRiskExpanded)}
+              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+            >
+              <h3 className="text-lg font-semibold">Low Risk Assets</h3>
+              <span className="sm:hidden">
+                {lowRiskExpanded ? (
+                  <ChevronUp className="h-5 w-5" />
+                ) : (
+                  <ChevronDown className="h-5 w-5" />
+                )}
+              </span>
+            </button>
+            <div
+              className={`p-4 transition-all duration-300 ${
+                lowRiskExpanded ? 'block' : 'hidden sm:block'
+              }`}
+            >
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {lowRiskFields.map((field) => (
+                  <div key={field.name} className="space-y-2">
+                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
+                        ₹
+                      </span>
+                      <Input
+                        id={field.name}
+                        type="text"
+                        inputMode="decimal"
+                        value={field.value === 0 ? '' : field.value.toString()}
+                        onChange={(e) => {
+                          const inputValue = e.target.value;
+                          if (inputValue === '') {
+                            handleLowRiskChange(field.name, 0);
+                            return;
+                          }
+                          const decimalRegex = /^\d*\.?\d{0,2}$/;
+                          if (!decimalRegex.test(inputValue)) return;
+                          const numericValue = parseFloat(inputValue) || 0;
+                          handleLowRiskChange(field.name, numericValue);
+                        }}
+                        className="pl-8"
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
 
           {/* Totals */}
           <div className="border-t pt-4 space-y-2">
