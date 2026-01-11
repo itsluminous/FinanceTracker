@@ -1,12 +1,20 @@
 import { createClient, User } from '@supabase/supabase-js';
 import { UserProfile } from './types';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error(
-    'Missing Supabase environment variables. Please check your .env.local file.'
+// Check if we're in a browser environment
+const isBrowser = typeof window !== 'undefined';
+
+// Only validate environment variables in development and browser context
+if (isBrowser && process.env.NODE_ENV === 'development' && (!supabaseUrl || !supabaseAnonKey)) {
+  console.error(
+    '❌ Missing Supabase environment variables!\n' +
+    'Please create a .env.local file with:\n' +
+    '  NEXT_PUBLIC_SUPABASE_URL=your_supabase_url\n' +
+    '  NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key\n\n' +
+    'See .env.local.example for reference.'
   );
 }
 
@@ -14,8 +22,19 @@ if (!supabaseUrl || !supabaseAnonKey) {
 let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseClient() {
+  // If environment variables are missing, throw a helpful error
+  if (!supabaseUrl || !supabaseAnonKey) {
+    if (isBrowser) {
+      throw new Error(
+        'Supabase is not configured. Please add NEXT_PUBLIC_SUPABASE_URL and NEXT_PUBLIC_SUPABASE_ANON_KEY to your .env.local file.'
+      );
+    }
+    // During build/SSR, return a mock client to prevent build failures
+    return null as any;
+  }
+
   if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl!, supabaseAnonKey!, {
+    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -29,7 +48,7 @@ function getSupabaseClient() {
       },
     });
   }
-  return supabaseInstance!; // Non-null assertion since we just created it
+  return supabaseInstance;
 }
 
 export const supabase = getSupabaseClient();

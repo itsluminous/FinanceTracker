@@ -101,7 +101,7 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event, session) => {
+      async (event: string, session: any) => {
         if (event === 'SIGNED_OUT') {
           hasShownStatusToast.current = false;
           router.push('/auth/login');

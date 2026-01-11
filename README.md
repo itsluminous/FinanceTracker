@@ -185,14 +185,16 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
 - Runs all 202 tests
 - Builds the application
 
-### Setting up GitHub Secrets
+### Setting up GitHub Secrets (Optional)
 
-Add these secrets to your GitHub repository for CI to work:
+The CI workflow will use placeholder values for environment variables if secrets are not configured. However, for a complete build verification, you can add these secrets to your GitHub repository:
 
 1. Go to repository Settings → Secrets and variables → Actions
-2. Add secrets:
-   - `NEXT_PUBLIC_SUPABASE_URL`
-   - `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+2. Add the following secrets (optional):
+   - `NEXT_PUBLIC_SUPABASE_URL` - Your Supabase project URL
+   - `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Your Supabase anonymous key
+
+**Note**: The build will succeed even without these secrets, using placeholder values during the build process. The actual environment variables are only required at runtime when the application is deployed.
 
 ## Project Structure
 
@@ -250,27 +252,6 @@ personal-finance-tracker/
 - Smooth transitions and animations
 - Touch-friendly interfaces
 
-## Requirements Status
-
-All 12 requirements from the specification are **fully implemented and tested**:
-
-| Requirement | Status | Tests |
-|-------------|--------|-------|
-| 1. User Authentication | ✅ | 7 tests + 3 property tests |
-| 2. Multi-User Access Control | ✅ | 11 tests + 4 property tests |
-| 3. Profile Management | ✅ | 12 tests + 3 property tests |
-| 4. Financial Data Entry | ✅ | 15 tests + 3 property tests |
-| 5. High/Medium Risk Assets | ✅ | Covered in financial entry tests |
-| 6. Low Risk Assets | ✅ | Covered in financial entry tests |
-| 7. Visual Analytics | ✅ | 22 tests + 1 property test |
-| 8. Combined Portfolio | ✅ | Covered in analytics + 1 property test |
-| 9. Responsive Design | ✅ | 12 tests |
-| 10. Database & RLS | ✅ | Covered in integration tests + 3 property tests |
-| 11. CRUD Operations | ✅ | Covered in financial entry tests |
-| 12. Technology Stack | ✅ | Full implementation |
-
-**Total: 202 tests passing** ✅
-
 ## Troubleshooting
 
 ### Build Issues
@@ -293,15 +274,3 @@ If tests fail:
 1. Ensure all dependencies are installed: `npm install`
 2. Check that test environment is properly configured
 3. Run tests individually to isolate issues: `npm test -- <test-file>`
-
-## License
-
-This project is private and proprietary.
-
-## Support
-
-For detailed information, refer to:
-- [Specification](./.kiro/specs/personal-finance-tracker/) - Full requirements, design, and implementation plan
-- GitHub Issues - Report bugs or request features
-- Supabase Documentation - For database and auth issues
-- Vercel Documentation - For deployment issues
