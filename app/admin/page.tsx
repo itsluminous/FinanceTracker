@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { getCurrentUser, getUserProfile } from '@/lib/supabase';
 import { AdminPanel } from '@/components/admin-panel';
-import { Button } from '@/components/ui/button';
+import { MainNav } from '@/components/main-nav';
+import { PageLoadingSkeleton } from '@/components/loading-skeletons';
 
 export default function AdminPage() {
   const [isAdmin, setIsAdmin] = useState(false);
@@ -41,14 +42,7 @@ export default function AdminPage() {
   }, [router]);
 
   if (loading) {
-    return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <PageLoadingSkeleton />;
   }
 
   if (!isAdmin) {
@@ -56,16 +50,13 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-8">
-      <div className="max-w-6xl mx-auto px-4">
-        <div className="mb-6 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
-            <p className="text-gray-600 mt-1">Manage user approvals and access</p>
-          </div>
-          <Button onClick={() => router.push('/')} variant="outline">
-            Back to Home
-          </Button>
+    <div className="min-h-screen bg-gray-50">
+      <MainNav />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="mb-6">
+          <h1 className="text-3xl font-bold text-gray-900">Admin Panel</h1>
+          <p className="text-gray-600 mt-1">Manage user approvals and access</p>
         </div>
         
         <AdminPanel />

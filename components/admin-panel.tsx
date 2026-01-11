@@ -12,6 +12,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { AdminPanelSkeleton } from './loading-skeletons';
 
 interface PendingUser {
   id: string;
@@ -195,14 +196,7 @@ export function AdminPanel() {
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-6 sm:p-8">
-        <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600 mx-auto"></div>
-          <p className="mt-4 text-sm sm:text-base text-gray-600">Loading...</p>
-        </div>
-      </div>
-    );
+    return <AdminPanelSkeleton />;
   }
 
   return (

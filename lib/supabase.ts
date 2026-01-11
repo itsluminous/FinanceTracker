@@ -1,4 +1,5 @@
 import { createClient, User } from '@supabase/supabase-js';
+import { UserProfile } from './types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -14,7 +15,7 @@ let supabaseInstance: ReturnType<typeof createClient> | null = null;
 
 function getSupabaseClient() {
   if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    supabaseInstance = createClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -28,7 +29,7 @@ function getSupabaseClient() {
       },
     });
   }
-  return supabaseInstance;
+  return supabaseInstance!; // Non-null assertion since we just created it
 }
 
 export const supabase = getSupabaseClient();
@@ -39,7 +40,7 @@ export const supabase = getSupabaseClient();
  * Sign up a new user with email and password
  * Note: User profile is automatically created by database trigger
  */
-export async function signUp(email: string, password: string) {
+export async function signUp(email: string, password: string): Promise<{ data: unknown; error: unknown }> {
   try {
     const { data, error } = await supabase.auth.signUp({
       email,
@@ -55,7 +56,7 @@ export async function signUp(email: string, password: string) {
 /**
  * Sign in an existing user with email and password
  */
-export async function signIn(email: string, password: string) {
+export async function signIn(email: string, password: string): Promise<{ data: unknown; error: unknown }> {
   try {
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
@@ -119,7 +120,7 @@ export async function getCurrentUser(): Promise<User | null> {
  * Get user profile with role information
  * Note: Profile is automatically created by database trigger on signup
  */
-export async function getUserProfile(userId: string) {
+export async function getUserProfile(userId: string): Promise<{ data: UserProfile | null; error: unknown }> {
   try {
     const { data, error } = await supabase
       .from('user_profiles')

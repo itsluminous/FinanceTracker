@@ -48,8 +48,9 @@ export function RiskDistributionChart({
   };
 
   // Custom label for pie chart
-  const renderLabel = (entry: RiskDistribution) => {
-    return `${entry.percentage.toFixed(1)}%`;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const renderLabel = (entry: any) => {
+    return entry.percentage ? `${entry.percentage.toFixed(1)}%` : '';
   };
 
   try {
@@ -63,7 +64,7 @@ export function RiskDistributionChart({
           <ResponsiveContainer width="100%" height={250} className="sm:h-[300px]">
             <PieChart>
               <Pie
-                data={data}
+                data={data as Array<{ name: string; value: number; percentage: number }>}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -80,7 +81,7 @@ export function RiskDistributionChart({
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => formatCurrency(value)}
+                formatter={(value: number | undefined) => value ? formatCurrency(value) : '₹0'}
                 contentStyle={{
                   backgroundColor: 'white',
                   border: '1px solid #e5e7eb',

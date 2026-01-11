@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
+import { supabase, getUserProfile } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 
 export function AuthHandler({ children }: { children: React.ReactNode }) {
@@ -48,11 +48,7 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
         // Check user status if logged in
         if (session && !hasShownStatusToast.current) {
           try {
-            const { data: userProfile, error: profileError } = await supabase
-              .from('user_profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
+            const { data: userProfile, error: profileError } = await getUserProfile(session.user.id);
             
             if (profileError) {
               console.error('Error fetching user profile:', profileError);
@@ -115,11 +111,7 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
         } else if (event === 'SIGNED_IN' && session) {
           // Check user status on sign in
           try {
-            const { data: userProfile } = await supabase
-              .from('user_profiles')
-              .select('role')
-              .eq('id', session.user.id)
-              .single();
+            const { data: userProfile } = await getUserProfile(session.user.id);
             
             if (userProfile?.role === 'rejected') {
               toast({

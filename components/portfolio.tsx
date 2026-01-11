@@ -1,14 +1,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RiskDistributionChart } from './risk-distribution-chart';
-import { AssetTrendChart } from './asset-trend-chart';
+import { useRouter } from 'next/navigation';
+import { LazyRiskDistributionChart, LazyAssetTrendChart } from './lazy-charts';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
 import { ChartDataPoint, RiskDistribution } from '@/lib/types';
 import { TimePeriod } from '@/lib/analytics';
-import { getSession } from '@/lib/supabase';
+import { getSession, getUserProfile } from '@/lib/supabase';
+import { getCache, setCache } from '@/lib/cache';
+import type { UserProfile } from '@/lib/types';
 
 interface Profile {
   id: string;
@@ -25,18 +27,26 @@ interface PortfolioData {
 }
 
 export function Portfolio() {
+  const router = useRouter();
   const [period, setPeriod] = useState<TimePeriod>('1year');
   const [data, setData] = useState<PortfolioData | null>(null);
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [selectedProfiles, setSelectedProfiles] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
 
   useEffect(() => {
     const fetchProfiles = async () => {
       try {
         const { session } = await getSession();
         if (!session) return;
+
+        // Fetch user profile
+        const { data: profile } = await getUserProfile(session.user.id);
+        if (profile) {
+          setUserProfile(profile);
+        }
 
         const response = await fetch('/api/profiles', {
           headers: { Authorization: `Bearer ${session.access_token}` },
@@ -65,6 +75,16 @@ export function Portfolio() {
         if (!session) throw new Error('No active session');
 
         const profileIds = Array.from(selectedProfiles).join(',');
+        const cacheKey = `analytics_${period}_${profileIds}`;
+        
+        // Check cache first
+        const cachedData = getCache<PortfolioData>(cacheKey);
+        if (cachedData) {
+          setData(cachedData);
+          setLoading(false);
+          return;
+        }
+        
         const url = `/api/analytics/combined?period=${period}${profileIds ? `&profileIds=${profileIds}` : ''}`;
         
         const response = await fetch(url, {
@@ -73,7 +93,11 @@ export function Portfolio() {
         
         if (!response.ok) throw new Error('Failed to fetch analytics data');
         
-        setData(await response.json());
+        const analyticsData = await response.json();
+        setData(analyticsData);
+        
+        // Cache the data for 5 minutes
+        setCache(cacheKey, analyticsData, 5 * 60 * 1000);
       } catch (err) {
         console.error('Error fetching analytics:', err);
         setError('Failed to load portfolio data. Please try again.');
@@ -198,12 +222,12 @@ export function Portfolio() {
 
       {hasData && data ? (
         <div className="grid gap-6 lg:grid-cols-2">
-          <RiskDistributionChart 
+          <LazyRiskDistributionChart 
             data={data.riskDistribution}
             title="Risk Distribution"
             description="Asset allocation across selected profiles"
           />
-          <AssetTrendChart 
+          <LazyAssetTrendChart 
             data={data.chartData}
             title="Asset Trends"
             description={`Portfolio growth over ${period === '30days' ? '30 days' : period === '3months' ? '3 months' : '1 year'}`}
@@ -211,12 +235,90 @@ export function Portfolio() {
           />
         </div>
       ) : (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 p-8 text-center">
-          <p className="text-gray-600">No financial data available.</p>
-          <p className="mt-2 text-sm text-gray-500">
-            Link profiles and add financial entries to see your portfolio.
-          </p>
-        </div>
+        <Card className="w-full max-w-2xl mx-auto">
+          <CardHeader>
+            <CardTitle>Welcome to Personal Finance Tracker</CardTitle>
+            <CardDescription>
+              Track and manage your financial assets across multiple profiles
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {userProfile && (
+              <div className="rounded-lg bg-blue-50 p-4">
+                <h3 className="font-semibold text-blue-900">Account Status</h3>
+                <div className="mt-2 space-y-1 text-sm text-blue-800">
+                  <p>Email: {userProfile.email}</p>
+                  <p>Role: <span className="capitalize font-medium">{userProfile.role}</span></p>
+                  {userProfile.role === 'admin' && (
+                    <p className="text-green-700 font-medium">✓ You have administrator privileges</p>
+                  )}
+                  {userProfile.role === 'pending' && (
+                    <p className="text-yellow-700 font-medium">⏳ Your account is pending approval</p>
+                  )}
+                  {userProfile.role === 'approved' && (
+                    <p className="text-green-700 font-medium">✓ Your account is approved</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-900">Getting Started</h3>
+              <div className="space-y-3 text-sm text-gray-600">
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">1</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Create or Select a Profile</p>
+                    <p>Set up financial profiles for yourself or family members</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">2</span>
+                  <div>
+                    <p className="font-medium text-gray-900">Enter Financial Data</p>
+                    <p>Track assets across high/medium risk and low risk categories</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">3</span>
+                  <div>
+                    <p className="font-medium text-gray-900">View Analytics</p>
+                    <p>Visualize your portfolio with charts and trends over time</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {userProfile?.role === 'admin' && (
+              <div className="rounded-lg border border-gray-200 p-4">
+                <h3 className="font-semibold text-gray-900">Admin Features</h3>
+                <p className="mt-1 text-sm text-gray-600">
+                  As an administrator, you can approve new users and manage access to financial profiles.
+                </p>
+                <Button className="mt-3" onClick={() => router.push('/admin')}>
+                  Go to Admin Panel
+                </Button>
+              </div>
+            )}
+
+            {userProfile?.role === 'pending' && (
+              <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
+                <h3 className="font-semibold text-yellow-900">Waiting for Approval</h3>
+                <p className="mt-1 text-sm text-yellow-800">
+                  Your account is pending approval from an administrator. You&apos;ll receive a notification once your account is approved.
+                </p>
+              </div>
+            )}
+
+            {(userProfile?.role === 'approved' || userProfile?.role === 'admin') && (
+              <div className="flex gap-3">
+                <Button onClick={() => router.push('/profiles')} className="flex-1">
+                  Manage Profiles
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       )}
     </div>
   );

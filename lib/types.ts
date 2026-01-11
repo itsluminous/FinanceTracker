@@ -52,3 +52,16 @@ export interface RiskDistribution {
   value: number;
   percentage: number;
 }
+
+// User profile types
+export type UserRole = 'admin' | 'approved' | 'pending' | 'rejected';
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  role: UserRole;
+  approved_at: string | null;
+  approved_by: string | null;
+  created_at: string;
+  updated_at: string;
+}

@@ -9,6 +9,7 @@ import { HighMediumRiskAssets, LowRiskAssets } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { ChevronDown, ChevronUp } from 'lucide-react';
+import { FinancialEntryFormSkeleton } from './loading-skeletons';
 
 interface FinancialEntryFormProps {
   profileId: string;
@@ -310,13 +311,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   };
 
   if (isLoadingLatest) {
-    return (
-      <Card>
-        <CardContent className="pt-6">
-          <p className="text-center text-muted-foreground">Loading...</p>
-        </CardContent>
-      </Card>
-    );
+    return <FinancialEntryFormSkeleton />;
   }
 
   const highMediumRiskFields = [

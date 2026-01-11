@@ -43,11 +43,12 @@ export default function LoginPage() {
         
         if (error) {
           // Handle specific error cases
-          let errorMessage = error.message;
+          const errorObj = error as { message?: string };
+          let errorMessage = errorObj.message || 'An error occurred during sign up';
           
-          if (error.message.includes('already registered')) {
+          if (errorMessage.includes('already registered')) {
             errorMessage = 'This email is already registered. Please sign in instead.';
-          } else if (error.message.includes('network')) {
+          } else if (errorMessage.includes('network')) {
             errorMessage = 'Network error. Please check your connection and try again.';
           }
           
@@ -61,7 +62,8 @@ export default function LoginPage() {
         }
         
         // Check if email confirmation is required
-        if (signUpData.user && !signUpData.session) {
+        const signUpResult = signUpData as { user?: unknown; session?: unknown };
+        if (signUpResult.user && !signUpResult.session) {
           toast({
             title: 'Check your email',
             description: 'Please check your email to verify your account before signing in.',
@@ -83,13 +85,14 @@ export default function LoginPage() {
         
         if (error) {
           // Handle specific error cases
-          let errorMessage = error.message;
+          const errorObj = error as { message?: string };
+          let errorMessage = errorObj.message || 'An error occurred during sign in';
           
-          if (error.message.includes('Invalid login credentials')) {
+          if (errorMessage.includes('Invalid login credentials')) {
             errorMessage = 'Invalid email or password. Please try again.';
-          } else if (error.message.includes('Email not confirmed')) {
+          } else if (errorMessage.includes('Email not confirmed')) {
             errorMessage = 'Please verify your email before signing in.';
-          } else if (error.message.includes('network')) {
+          } else if (errorMessage.includes('network')) {
             errorMessage = 'Network error. Please check your connection and try again.';
           }
           

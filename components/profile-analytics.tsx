@@ -51,8 +51,8 @@ export function ProfileAnalytics({ profileId, profileName }: ProfileAnalyticsPro
         // Validate date ranges
         if (analyticsData.chartData && analyticsData.chartData.length > 0) {
           const dates = analyticsData.chartData.map((d: ChartDataPoint) => new Date(d.date));
-          const minDate = new Date(Math.min(...dates.map(d => d.getTime())));
-          const maxDate = new Date(Math.max(...dates.map(d => d.getTime())));
+          const minDate = new Date(Math.min(...dates.map((d: Date) => d.getTime())));
+          const maxDate = new Date(Math.max(...dates.map((d: Date) => d.getTime())));
           
           // Check if date range is valid
           if (minDate > maxDate) {

@@ -1,0 +1,190 @@
+'use client';
+
+import { useEffect, useState } from 'react';
+import { useRouter, usePathname } from 'next/navigation';
+import { getCurrentUser, getUserProfile } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { UserNav } from '@/components/user-nav';
+import { ProfileSelector } from '@/components/profile-selector';
+import { ProfileDialog } from '@/components/profile-dialog';
+import { Menu, X } from 'lucide-react';
+
+interface UserProfile {
+  id: string;
+  email: string;
+  name?: string;
+  role: 'admin' | 'approved' | 'pending' | 'rejected';
+}
+
+interface MainNavProps {
+  showProfileSelector?: boolean;
+  selectedProfileId?: string;
+  onProfileSelect?: (profileId: string) => void;
+}
+
+export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelect }: MainNavProps) {
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  useEffect(() => {
+    const loadUserProfile = async () => {
+      try {
+        const user = await getCurrentUser();
+        if (user) {
+          const { data: profile } = await getUserProfile(user.id);
+          if (profile) {
+            setUserProfile(profile);
+          }
+        }
+      } catch (error) {
+        console.error('Error loading user profile:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadUserProfile();
+  }, []);
+
+  const isActive = (path: string) => pathname === path;
+
+  const canAccessProfiles = userProfile?.role === 'admin' || userProfile?.role === 'approved';
+
+  if (loading) {
+    return (
+      <nav className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center gap-2">
+              <span className="text-2xl">💰</span>
+              <h1 className="text-xl font-bold text-gray-900">
+                <span className="hidden sm:inline">Finance Tracker</span>
+                <span className="sm:hidden">Finance</span>
+              </h1>
+            </div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
+  return (
+    <>
+      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            {/* Logo/Brand */}
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => router.push('/')}
+                className="flex items-center gap-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+              >
+                <span className="text-2xl">💰</span>
+                <span className="hidden sm:inline">Finance Tracker</span>
+                <span className="sm:hidden">Finance</span>
+              </button>
+            </div>
+
+            {/* Desktop Navigation */}
+            <div className="hidden md:flex items-center gap-2">
+              {canAccessProfiles && (
+                <Button
+                  variant={isActive('/profiles') ? 'default' : 'ghost'}
+                  onClick={() => router.push('/profiles')}
+                >
+                  Profiles
+                </Button>
+              )}
+              <div className="ml-2">
+                <UserNav />
+              </div>
+            </div>
+
+            {/* Mobile Menu Button */}
+            <div className="md:hidden flex items-center gap-2">
+              <UserNav />
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              >
+                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+              </Button>
+            </div>
+          </div>
+
+          {/* Profile Selector in Header (Desktop) */}
+          {showProfileSelector && canAccessProfiles && (
+            <div className="hidden md:block pb-4">
+              <div className="flex items-center gap-4">
+                <span className="text-sm font-medium text-gray-700">Profile:</span>
+                <div className="flex-1 max-w-md">
+                  <ProfileSelector
+                    onProfileSelect={(profileId) => onProfileSelect?.(profileId)}
+                    onAddProfile={() => setShowProfileDialog(true)}
+                    selectedProfileId={selectedProfileId}
+                    compact
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Mobile Menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-gray-200 bg-white">
+            <div className="px-4 py-3 space-y-2">
+              {canAccessProfiles && (
+                <Button
+                  variant={isActive('/profiles') ? 'default' : 'ghost'}
+                  onClick={() => {
+                    router.push('/profiles');
+                    setMobileMenuOpen(false);
+                  }}
+                  className="w-full justify-start"
+                >
+                  Profiles
+                </Button>
+              )}
+
+              {/* Profile Selector in Mobile Menu */}
+              {showProfileSelector && canAccessProfiles && (
+                <div className="pt-4 border-t border-gray-200">
+                  <span className="text-sm font-medium text-gray-700 block mb-2">Profile:</span>
+                  <ProfileSelector
+                    onProfileSelect={(profileId) => {
+                      onProfileSelect?.(profileId);
+                      setMobileMenuOpen(false);
+                    }}
+                    onAddProfile={() => {
+                      setShowProfileDialog(true);
+                      setMobileMenuOpen(false);
+                    }}
+                    selectedProfileId={selectedProfileId}
+                  />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </nav>
+
+      {/* Profile Dialog */}
+      {showProfileSelector && (
+        <ProfileDialog
+          open={showProfileDialog}
+          onOpenChange={setShowProfileDialog}
+          onSuccess={() => {
+            setShowProfileDialog(false);
+            window.location.reload();
+          }}
+        />
+      )}
+    </>
+  );
+}

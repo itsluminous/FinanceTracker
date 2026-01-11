@@ -12,6 +12,7 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
+import { ProfileSelectorSkeleton } from './loading-skeletons';
 
 interface Profile {
   id: string;
@@ -24,12 +25,14 @@ interface ProfileSelectorProps {
   onProfileSelect: (profileId: string) => void;
   onAddProfile: () => void;
   selectedProfileId?: string;
+  compact?: boolean;
 }
 
 export function ProfileSelector({
   onProfileSelect,
   onAddProfile,
   selectedProfileId,
+  compact = false,
 }: ProfileSelectorProps) {
   const [profiles, setProfiles] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -96,15 +99,18 @@ export function ProfileSelector({
   };
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4">
-        <div className="h-6 w-6 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-      </div>
-    );
+    return <ProfileSelectorSkeleton />;
   }
 
   // Empty state - no profiles linked
   if (profiles.length === 0) {
+    if (compact) {
+      return (
+        <div className="text-sm text-gray-500">
+          No profiles available
+        </div>
+      );
+    }
     return (
       <Card className="w-full">
         <CardHeader>
@@ -119,6 +125,32 @@ export function ProfileSelector({
           </Button>
         </CardContent>
       </Card>
+    );
+  }
+
+  // Compact mode - just the select dropdown
+  if (compact) {
+    return (
+      <div className="flex items-center gap-2">
+        <Select
+          value={selectedProfileId}
+          onValueChange={handleProfileChange}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="Choose a profile" />
+          </SelectTrigger>
+          <SelectContent>
+            {profiles.map(profile => (
+              <SelectItem key={profile.id} value={profile.id}>
+                {profile.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Button onClick={onAddProfile} variant="outline" size="sm">
+          Add
+        </Button>
+      </div>
     );
   }
 
