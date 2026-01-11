@@ -120,7 +120,7 @@ export function ProfileSelector({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <Button onClick={onAddProfile} className="w-full">
+          <Button variant="secondary" onClick={onAddProfile} className="w-full">
             Add Your First Profile
           </Button>
         </CardContent>

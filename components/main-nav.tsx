@@ -8,6 +8,7 @@ import { UserNav } from '@/components/user-nav';
 import { ProfileSelector } from '@/components/profile-selector';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { Menu, X } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface UserProfile {
   id: string;
@@ -56,12 +57,12 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
   if (loading) {
     return (
-      <nav className="bg-white border-b border-gray-200">
+      <nav className="bg-card border-b border-border">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <span className="text-2xl">💰</span>
-              <h1 className="text-xl font-bold text-gray-900">
+              <h1 className="text-xl font-bold text-foreground">
                 <span className="hidden sm:inline">Finance Tracker</span>
                 <span className="sm:hidden">Finance</span>
               </h1>
@@ -74,14 +75,14 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
   return (
     <>
-      <nav className="bg-white border-b border-gray-200 sticky top-0 z-50">
+      <nav className="bg-card border-b border-border sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             {/* Logo/Brand */}
             <div className="flex items-center gap-2">
               <button
                 onClick={() => router.push('/')}
-                className="flex items-center gap-2 text-xl font-bold text-gray-900 hover:text-blue-600 transition-colors"
+                className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
               >
                 <span className="text-2xl">💰</span>
                 <span className="hidden sm:inline">Finance Tracker</span>
@@ -93,12 +94,13 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
             <div className="hidden md:flex items-center gap-2">
               {canAccessProfiles && (
                 <Button
-                  variant={isActive('/profiles') ? 'default' : 'ghost'}
+                  variant={isActive('/profiles') ? 'secondary' : 'outline'}
                   onClick={() => router.push('/profiles')}
                 >
                   Profiles
                 </Button>
               )}
+              <ThemeToggle />
               <div className="ml-2">
                 <UserNav />
               </div>
@@ -106,6 +108,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
             {/* Mobile Menu Button */}
             <div className="md:hidden flex items-center gap-2">
+              <ThemeToggle />
               <UserNav />
               <Button
                 variant="ghost"
@@ -121,7 +124,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
           {showProfileSelector && canAccessProfiles && (
             <div className="hidden md:block pb-4">
               <div className="flex items-center gap-4">
-                <span className="text-sm font-medium text-gray-700">Profile:</span>
+                <span className="text-sm font-medium text-muted-foreground">Profile:</span>
                 <div className="flex-1 max-w-md">
                   <ProfileSelector
                     onProfileSelect={(profileId) => onProfileSelect?.(profileId)}
@@ -137,11 +140,11 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
         {/* Mobile Menu */}
         {mobileMenuOpen && (
-          <div className="md:hidden border-t border-gray-200 bg-white">
+          <div className="md:hidden border-t border-border bg-card">
             <div className="px-4 py-3 space-y-2">
               {canAccessProfiles && (
                 <Button
-                  variant={isActive('/profiles') ? 'default' : 'ghost'}
+                  variant={isActive('/profiles') ? 'secondary' : 'outline'}
                   onClick={() => {
                     router.push('/profiles');
                     setMobileMenuOpen(false);
@@ -154,8 +157,8 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
               {/* Profile Selector in Mobile Menu */}
               {showProfileSelector && canAccessProfiles && (
-                <div className="pt-4 border-t border-gray-200">
-                  <span className="text-sm font-medium text-gray-700 block mb-2">Profile:</span>
+                <div className="pt-4 border-t border-border">
+                  <span className="text-sm font-medium text-muted-foreground block mb-2">Profile:</span>
                   <ProfileSelector
                     onProfileSelect={(profileId) => {
                       onProfileSelect?.(profileId);

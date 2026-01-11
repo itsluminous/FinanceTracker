@@ -227,7 +227,7 @@ export function AdminPanel() {
                     <button
                       type="button"
                       onClick={() => toggleUserExpanded(user.id)}
-                      className="w-full flex items-start justify-between p-3 sm:p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+                      className="w-full flex items-start justify-between p-3 sm:p-4 bg-muted hover:bg-accent transition-colors sm:cursor-default sm:pointer-events-none"
                     >
                       <div className="text-left">
                         <h3 className="font-semibold text-sm sm:text-base text-gray-900 break-all">
@@ -279,7 +279,7 @@ export function AdminPanel() {
                             {profiles.map(profile => (
                               <label
                                 key={profile.id}
-                                className="flex items-center space-x-2 cursor-pointer hover:bg-gray-50 p-1.5 sm:p-2 rounded"
+                                className="flex items-center space-x-2 cursor-pointer hover:bg-accent p-1.5 sm:p-2 rounded"
                               >
                                 <input
                                   type="checkbox"

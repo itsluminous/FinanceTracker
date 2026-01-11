@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react-hooks/error-boundaries */
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartDataPoint } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,8 +29,8 @@ interface CustomTooltipProps {
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (active && payload && payload.length) {
     return (
-      <div className="rounded-lg border bg-white p-2 sm:p-3 shadow-lg">
-        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-gray-900">{label}</p>
+      <div className="rounded-lg border bg-popover p-2 sm:p-3 shadow-lg">
+        <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-popover-foreground">{label}</p>
         {payload.map((entry, index: number) => (
           <p key={index} className="text-xs sm:text-sm" style={{ color: entry.color }}>
             {entry.name}: {new Intl.NumberFormat('en-IN', {

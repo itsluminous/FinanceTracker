@@ -12,7 +12,6 @@ import { PageLoadingSkeleton } from '@/components/loading-skeletons';
 export default function ProfilesPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
-  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
   const { toast } = useToast();
 
@@ -39,7 +38,6 @@ export default function ProfilesPage() {
         }
         
         if (profile) {
-          setUserRole(profile.role);
           
           // Check if user has permission to access profiles
           if (profile.role === 'pending') {
@@ -83,7 +81,7 @@ export default function ProfilesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       <MainNav
         showProfileSelector
         selectedProfileId={selectedProfileId || undefined}

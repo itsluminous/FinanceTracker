@@ -134,11 +134,11 @@ export function Portfolio() {
   if (loading) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
+        <h2 className="text-2xl font-bold text-foreground">Portfolio</h2>
         <div className="flex h-[400px] items-center justify-center">
           <div className="text-center">
-            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-gray-300 border-t-blue-600"></div>
-            <p className="mt-4 text-gray-600">Loading portfolio data...</p>
+            <div className="mx-auto h-8 w-8 animate-spin rounded-full border-4 border-muted border-t-primary"></div>
+            <p className="mt-4 text-muted-foreground">Loading portfolio data...</p>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ export function Portfolio() {
   if (error) {
     return (
       <div className="space-y-6">
-        <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
+        <h2 className="text-2xl font-bold text-foreground">Portfolio</h2>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
           <p className="text-sm text-red-800">{error}</p>
         </div>
@@ -162,18 +162,18 @@ export function Portfolio() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-gray-900">Portfolio</h2>
+          <h2 className="text-2xl font-bold text-foreground">Portfolio</h2>
           {data && data.profileCount > 0 && (
-            <p className="text-sm text-gray-600">
+            <p className="text-sm text-muted-foreground">
               {selectedProfiles.size} of {profiles.length} profile{profiles.length > 1 ? 's' : ''} selected
             </p>
           )}
         </div>
         
         <div className="flex gap-2">
-          <Button variant={period === '30days' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('30days')}>30 Days</Button>
-          <Button variant={period === '3months' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('3months')}>3 Months</Button>
-          <Button variant={period === '1year' ? 'default' : 'outline'} size="sm" onClick={() => setPeriod('1year')}>1 Year</Button>
+          <Button variant={period === '30days' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('30days')}>30 Days</Button>
+          <Button variant={period === '3months' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('3months')}>3 Months</Button>
+          <Button variant={period === '1year' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('1year')}>1 Year</Button>
         </div>
       </div>
 
@@ -209,7 +209,7 @@ export function Portfolio() {
             <CardDescription>Combined value across selected profiles</CardDescription>
           </CardHeader>
           <CardContent>
-            <p className="text-4xl font-bold text-gray-900">{formatCurrency(data.totalAssets)}</p>
+            <p className="text-4xl font-bold text-foreground">{formatCurrency(data.totalAssets)}</p>
           </CardContent>
         </Card>
       )}
@@ -237,7 +237,7 @@ export function Portfolio() {
       ) : (
         <Card className="w-full max-w-2xl mx-auto">
           <CardHeader>
-            <CardTitle>Welcome to Personal Finance Tracker</CardTitle>
+            <CardTitle>Personal Finance Tracker</CardTitle>
             <CardDescription>
               Track and manage your financial assets across multiple profiles
             </CardDescription>
@@ -263,26 +263,26 @@ export function Portfolio() {
             )}
 
             <div className="space-y-4">
-              <h3 className="font-semibold text-gray-900">Getting Started</h3>
-              <div className="space-y-3 text-sm text-gray-600">
+              <h3 className="font-semibold text-foreground">Getting Started</h3>
+              <div className="space-y-3 text-sm text-muted-foreground">
                 <div className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">1</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">1</span>
                   <div>
-                    <p className="font-medium text-gray-900">Create or Select a Profile</p>
+                    <p className="font-medium text-foreground">Create or Select a Profile</p>
                     <p>Set up financial profiles for yourself or family members</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">2</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">2</span>
                   <div>
-                    <p className="font-medium text-gray-900">Enter Financial Data</p>
+                    <p className="font-medium text-foreground">Enter Financial Data</p>
                     <p>Track assets across high/medium risk and low risk categories</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-semibold text-xs">3</span>
+                  <span className="flex h-6 w-6 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-xs">3</span>
                   <div>
-                    <p className="font-medium text-gray-900">View Analytics</p>
+                    <p className="font-medium text-foreground">View Analytics</p>
                     <p>Visualize your portfolio with charts and trends over time</p>
                   </div>
                 </div>
@@ -290,12 +290,12 @@ export function Portfolio() {
             </div>
 
             {userProfile?.role === 'admin' && (
-              <div className="rounded-lg border border-gray-200 p-4">
-                <h3 className="font-semibold text-gray-900">Admin Features</h3>
-                <p className="mt-1 text-sm text-gray-600">
+              <div className="rounded-lg border border-border p-4">
+                <h3 className="font-semibold text-foreground">Admin Features</h3>
+                <p className="mt-1 text-sm text-muted-foreground">
                   As an administrator, you can approve new users and manage access to financial profiles.
                 </p>
-                <Button className="mt-3" onClick={() => router.push('/admin')}>
+                <Button variant="secondary" className="mt-3" onClick={() => router.push('/admin')}>
                   Go to Admin Panel
                 </Button>
               </div>
@@ -312,7 +312,7 @@ export function Portfolio() {
 
             {(userProfile?.role === 'approved' || userProfile?.role === 'admin') && (
               <div className="flex gap-3">
-                <Button onClick={() => router.push('/profiles')} className="flex-1">
+                <Button variant="secondary" onClick={() => router.push('/profiles')} className="flex-1">
                   Manage Profiles
                 </Button>
               </div>

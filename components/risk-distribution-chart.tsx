@@ -1,5 +1,6 @@
 'use client';
 
+/* eslint-disable react-hooks/error-boundaries */
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { RiskDistribution } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';

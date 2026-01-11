@@ -74,8 +74,8 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-10 w-10 rounded-full p-0">
-          <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-gray-300 hover:border-gray-400 transition-colors">
-            <User className="h-5 w-5 text-gray-600" />
+          <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-border hover:border-primary transition-colors">
+            <User className="h-5 w-5" />
           </div>
         </Button>
       </DropdownMenuTrigger>

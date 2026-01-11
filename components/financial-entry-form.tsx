@@ -397,9 +397,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             <button
               type="button"
               onClick={() => setHighMediumRiskExpanded(!highMediumRiskExpanded)}
-              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+              className="w-full flex items-center justify-between p-4 bg-muted hover:bg-accent transition-colors sm:cursor-default sm:pointer-events-none"
             >
-              <h3 className="text-lg font-semibold">High/Medium Risk Assets</h3>
+              <h3 className="text-lg font-semibold text-foreground">High/Medium Risk Assets</h3>
               <span className="sm:hidden">
                 {highMediumRiskExpanded ? (
                   <ChevronUp className="h-5 w-5" />
@@ -460,9 +460,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             <button
               type="button"
               onClick={() => setLowRiskExpanded(!lowRiskExpanded)}
-              className="w-full flex items-center justify-between p-4 bg-gray-50 hover:bg-gray-100 transition-colors sm:cursor-default sm:pointer-events-none"
+              className="w-full flex items-center justify-between p-4 bg-muted hover:bg-accent transition-colors sm:cursor-default sm:pointer-events-none"
             >
-              <h3 className="text-lg font-semibold">Low Risk Assets</h3>
+              <h3 className="text-lg font-semibold text-foreground">Low Risk Assets</h3>
               <span className="sm:hidden">
                 {lowRiskExpanded ? (
                   <ChevronUp className="h-5 w-5" />
@@ -535,7 +535,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
           </div>
 
           {/* Submit Button */}
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button type="submit" variant="secondary" className="w-full" disabled={isLoading}>
             {isLoading ? 'Saving...' : 'Save Entry'}
           </Button>
         </CardContent>

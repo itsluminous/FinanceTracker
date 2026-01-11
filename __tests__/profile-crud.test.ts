@@ -192,7 +192,7 @@ describe('Profile CRUD Operations', () => {
   describe('Profile Creation', () => {
     it('should create a new profile with valid name', async () => {
       // Arrange
-      const profileName = 'Personal Finance';
+      const profileName = 'Finance Tracker';
 
       // Act
       const { data: profile, error } = await supabase
