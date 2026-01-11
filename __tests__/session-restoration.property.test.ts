@@ -1,15 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 
-/**
- * Feature: personal-finance-tracker, Property 13: Session restoration
- * 
- * Property: For any authenticated user who returns to the application,
- * their session should be automatically restored without requiring re-login.
- * 
- * Validates: Requirements 1.6
- */
-
 // Mock Supabase module
 vi.mock('@supabase/supabase-js', () => {
   interface MockSession {

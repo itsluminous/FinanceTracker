@@ -1,15 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import * as fc from 'fast-check';
 
-/**
- * Feature: personal-finance-tracker, Property 14: Profile linking during approval
- * 
- * Property: For any admin approval action with profile links specified,
- * user_profile_links entries should be created for each specified profile.
- * 
- * Validates: Requirements 2.5
- */
-
 // Types for mock data
 interface MockUserProfile {
   id: string;
