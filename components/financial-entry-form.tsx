@@ -44,10 +44,54 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLatest, setIsLoadingLatest] = useState(true);
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   
   // Collapsible sections state for mobile
   const [highMediumRiskExpanded, setHighMediumRiskExpanded] = useState(true);
   const [lowRiskExpanded, setLowRiskExpanded] = useState(true);
+
+  // Draft saving key
+  const draftKey = `financial-entry-draft-${profileId}`;
+
+  // Load draft from local storage on mount
+  useEffect(() => {
+    const loadDraft = () => {
+      try {
+        const draft = localStorage.getItem(draftKey);
+        if (draft) {
+          const parsed = JSON.parse(draft);
+          if (parsed.entryDate) setEntryDate(parsed.entryDate);
+          if (parsed.highMediumRisk) setHighMediumRisk(parsed.highMediumRisk);
+          if (parsed.lowRisk) setLowRisk(parsed.lowRisk);
+        }
+      } catch (error) {
+        console.error('Error loading draft:', error);
+      }
+    };
+    
+    loadDraft();
+  }, [profileId, draftKey]);
+
+  // Save draft to local storage on changes
+  useEffect(() => {
+    const saveDraft = () => {
+      try {
+        const draft = {
+          entryDate,
+          highMediumRisk,
+          lowRisk,
+          timestamp: Date.now(),
+        };
+        localStorage.setItem(draftKey, JSON.stringify(draft));
+      } catch (error) {
+        console.error('Error saving draft:', error);
+      }
+    };
+
+    // Debounce draft saving
+    const timeoutId = setTimeout(saveDraft, 1000);
+    return () => clearTimeout(timeoutId);
+  }, [entryDate, highMediumRisk, lowRisk, draftKey]);
 
   // Calculate totals
   const totalHighMediumRisk = Object.values(highMediumRisk).reduce(
@@ -115,6 +159,15 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   }, [profileId]);
 
   const handleHighMediumRiskChange = (name: string, value: number) => {
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
     setHighMediumRisk((prev) => ({
       ...prev,
       [name]: value,
@@ -122,14 +175,65 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   };
 
   const handleLowRiskChange = (name: string, value: number) => {
+    // Clear validation error for this field
+    if (validationErrors[name]) {
+      setValidationErrors((prev) => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+    
     setLowRisk((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
 
+  const validateForm = (): boolean => {
+    const errors: Record<string, string> = {};
+    
+    // Validate entry date
+    if (!entryDate) {
+      errors.entry_date = 'Entry date is required';
+    }
+    
+    // Validate decimal precision for all fields
+    const validateDecimal = (value: number, fieldName: string) => {
+      const decimalPlaces = value.toString().split('.')[1]?.length || 0;
+      if (decimalPlaces > 2) {
+        errors[fieldName] = 'Maximum 2 decimal places allowed';
+      }
+      if (value < 0) {
+        errors[fieldName] = 'Value cannot be negative';
+      }
+    };
+    
+    Object.entries(highMediumRisk).forEach(([key, value]) => {
+      validateDecimal(value, key);
+    });
+    
+    Object.entries(lowRisk).forEach(([key, value]) => {
+      validateDecimal(value, key);
+    });
+    
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate form before submission
+    if (!validateForm()) {
+      toast({
+        title: 'Validation Error',
+        description: 'Please fix the errors in the form before submitting.',
+        variant: 'destructive',
+      });
+      return;
+    }
+    
     setIsLoading(true);
 
     try {
@@ -155,7 +259,24 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
 
       if (!response.ok) {
         const error = await response.json();
+        
+        // Handle specific error cases
+        if (response.status === 403) {
+          throw new Error('You do not have permission to edit this profile');
+        } else if (response.status === 409) {
+          throw new Error('An entry for this date already exists');
+        } else if (response.status === 400) {
+          throw new Error(error.error || 'Invalid data provided');
+        }
+        
         throw new Error(error.error || 'Failed to save entry');
+      }
+
+      // Clear draft on successful save
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (error) {
+        console.error('Error clearing draft:', error);
       }
 
       toast({
@@ -168,11 +289,21 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
       }
     } catch (error) {
       console.error('Error saving entry:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to save entry',
-        variant: 'destructive',
-      });
+      
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        toast({
+          title: 'Network Error',
+          description: 'Unable to save entry. Please check your connection and try again.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to save entry',
+          variant: 'destructive',
+        });
+      }
     } finally {
       setIsLoading(false);
     }
@@ -241,15 +372,29 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
         <CardContent className="space-y-6">
           {/* Date Picker */}
           <div className="space-y-2">
-            <Label htmlFor="entry_date">Entry Date</Label>
+            <Label htmlFor="entry_date" className={validationErrors.entry_date ? 'text-red-500' : ''}>
+              Entry Date {validationErrors.entry_date && '*'}
+            </Label>
             <Input
               id="entry_date"
               type="date"
               value={entryDate}
-              onChange={(e) => setEntryDate(e.target.value)}
+              onChange={(e) => {
+                setEntryDate(e.target.value);
+                if (validationErrors.entry_date) {
+                  setValidationErrors((prev) => {
+                    const newErrors = { ...prev };
+                    delete newErrors.entry_date;
+                    return newErrors;
+                  });
+                }
+              }}
               required
-              className="w-full"
+              className={`w-full ${validationErrors.entry_date ? 'border-red-500' : ''}`}
             />
+            {validationErrors.entry_date && (
+              <p className="text-sm text-red-500">{validationErrors.entry_date}</p>
+            )}
           </div>
 
           {/* High/Medium Risk Assets - Collapsible on mobile */}
@@ -276,7 +421,12 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {highMediumRiskFields.map((field) => (
                   <div key={field.name} className="space-y-2">
-                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <Label 
+                      htmlFor={field.name}
+                      className={validationErrors[field.name] ? 'text-red-500' : ''}
+                    >
+                      {field.label} {validationErrors[field.name] && '*'}
+                    </Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         ₹
@@ -297,10 +447,13 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
                           const numericValue = parseFloat(inputValue) || 0;
                           handleHighMediumRiskChange(field.name, numericValue);
                         }}
-                        className="pl-8"
+                        className={`pl-8 ${validationErrors[field.name] ? 'border-red-500' : ''}`}
                         placeholder="0.00"
                       />
                     </div>
+                    {validationErrors[field.name] && (
+                      <p className="text-xs text-red-500">{validationErrors[field.name]}</p>
+                    )}
                   </div>
                 ))}
               </div>
@@ -331,7 +484,12 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {lowRiskFields.map((field) => (
                   <div key={field.name} className="space-y-2">
-                    <Label htmlFor={field.name}>{field.label}</Label>
+                    <Label 
+                      htmlFor={field.name}
+                      className={validationErrors[field.name] ? 'text-red-500' : ''}
+                    >
+                      {field.label} {validationErrors[field.name] && '*'}
+                    </Label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
                         ₹
@@ -352,10 +510,13 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
                           const numericValue = parseFloat(inputValue) || 0;
                           handleLowRiskChange(field.name, numericValue);
                         }}
-                        className="pl-8"
+                        className={`pl-8 ${validationErrors[field.name] ? 'border-red-500' : ''}`}
                         placeholder="0.00"
                       />
                     </div>
+                    {validationErrors[field.name] && (
+                      <p className="text-xs text-red-500">{validationErrors[field.name]}</p>
+                    )}
                   </div>
                 ))}
               </div>

@@ -55,16 +55,19 @@ export async function GET(
 
     if (!isAdmin) {
       // Check if user has link to this profile
-      const { data: link } = await supabase
+      const { data: link, error: linkError } = await supabase
         .from('user_profile_links')
         .select('id')
         .eq('user_id', user.id)
         .eq('profile_id', profileId)
         .single();
 
-      if (!link) {
+      if (linkError || !link) {
         return NextResponse.json(
-          { error: 'Access denied to this profile' },
+          { 
+            error: 'Access denied to this profile',
+            message: 'You do not have permission to view this profile. Please contact an administrator if you believe this is an error.'
+          },
           { status: 403 }
         );
       }
@@ -149,16 +152,29 @@ export async function POST(
 
     if (!isAdmin) {
       // Check if user has edit permission for this profile
-      const { data: link } = await supabase
+      const { data: link, error: linkError } = await supabase
         .from('user_profile_links')
         .select('permission')
         .eq('user_id', user.id)
         .eq('profile_id', profileId)
         .single();
 
-      if (!link || link.permission !== 'edit') {
+      if (linkError || !link) {
         return NextResponse.json(
-          { error: 'Edit permission required for this profile' },
+          { 
+            error: 'Access denied to this profile',
+            message: 'You do not have access to this profile.'
+          },
+          { status: 403 }
+        );
+      }
+
+      if (link.permission !== 'edit') {
+        return NextResponse.json(
+          { 
+            error: 'Edit permission required for this profile',
+            message: 'You have read-only access to this profile. Please contact an administrator to request edit permissions.'
+          },
           { status: 403 }
         );
       }

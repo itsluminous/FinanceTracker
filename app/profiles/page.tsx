@@ -2,18 +2,21 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser } from '@/lib/supabase';
+import { getCurrentUser, getUserProfile } from '@/lib/supabase';
 import { ProfileSelector } from '@/components/profile-selector';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { FinancialEntryForm } from '@/components/financial-entry-form';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useToast } from '@/hooks/use-toast';
 
 export default function ProfilesPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
   const router = useRouter();
+  const { toast } = useToast();
 
   useEffect(() => {
     const loadUser = async () => {
@@ -23,8 +26,51 @@ export default function ProfilesPage() {
           router.push('/auth/login');
           return;
         }
+        
+        // Check user role and permissions
+        const { data: profile, error } = await getUserProfile(currentUser.id);
+        
+        if (error) {
+          console.error('Error loading user profile:', error);
+          toast({
+            title: 'Error',
+            description: 'Unable to load user profile. Please try again.',
+            variant: 'destructive',
+          });
+          return;
+        }
+        
+        if (profile) {
+          setUserRole(profile.role);
+          
+          // Check if user has permission to access profiles
+          if (profile.role === 'pending') {
+            toast({
+              title: 'Access Denied',
+              description: 'Your account is pending approval. Please wait for admin approval.',
+              variant: 'destructive',
+            });
+            router.push('/');
+            return;
+          }
+          
+          if (profile.role === 'rejected') {
+            toast({
+              title: 'Access Denied',
+              description: 'Your account has been rejected. Please contact support.',
+              variant: 'destructive',
+            });
+            router.push('/');
+            return;
+          }
+        }
       } catch (error) {
         console.error('Error loading user:', error);
+        toast({
+          title: 'Error',
+          description: 'An error occurred while loading your profile.',
+          variant: 'destructive',
+        });
         router.push('/auth/login');
       } finally {
         setLoading(false);
@@ -32,7 +78,7 @@ export default function ProfilesPage() {
     };
 
     loadUser();
-  }, [router]);
+  }, [router, toast]);
 
   if (loading) {
     return (

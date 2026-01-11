@@ -11,6 +11,7 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { toast } = useToast();
   const hasInitialized = useRef(false);
+  const hasShownStatusToast = useRef(false);
 
   useEffect(() => {
     // Prevent duplicate initialization in React Strict Mode
@@ -19,20 +20,118 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
     }
     hasInitialized.current = true;
 
-    // Just check if we have a session, don't fetch profile here
-    // Let individual pages handle their own data fetching
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (!session && pathname !== '/auth/login') {
-        router.push('/auth/login');
+    const checkAuthAndStatus = async () => {
+      try {
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        // Handle session errors
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          if (pathname !== '/auth/login') {
+            toast({
+              title: 'Session Error',
+              description: 'Your session has expired. Please sign in again.',
+              variant: 'destructive',
+            });
+            router.push('/auth/login');
+          }
+          setLoading(false);
+          return;
+        }
+        
+        if (!session && pathname !== '/auth/login') {
+          router.push('/auth/login');
+          setLoading(false);
+          return;
+        }
+        
+        // Check user status if logged in
+        if (session && !hasShownStatusToast.current) {
+          try {
+            const { data: userProfile, error: profileError } = await supabase
+              .from('user_profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (profileError) {
+              console.error('Error fetching user profile:', profileError);
+            } else if (userProfile) {
+              // Show toast for pending users
+              if (userProfile.role === 'pending') {
+                toast({
+                  title: 'Account Pending',
+                  description: 'Your account is pending admin approval. You will be notified once approved.',
+                  variant: 'default',
+                });
+                hasShownStatusToast.current = true;
+              }
+              // Show toast for rejected users
+              else if (userProfile.role === 'rejected') {
+                toast({
+                  title: 'Account Rejected',
+                  description: 'Your account request has been rejected. Please contact support for more information.',
+                  variant: 'destructive',
+                });
+                hasShownStatusToast.current = true;
+                // Sign out rejected users
+                await supabase.auth.signOut();
+                router.push('/auth/login');
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('Error checking user status:', error);
+          }
+        }
+        
+        setLoading(false);
+      } catch (error) {
+        console.error('Auth check error:', error);
+        // Handle network errors gracefully
+        if (pathname !== '/auth/login') {
+          toast({
+            title: 'Connection Error',
+            description: 'Unable to verify your session. Please check your connection.',
+            variant: 'destructive',
+          });
+        }
+        setLoading(false);
       }
-      setLoading(false);
-    });
+    };
+
+    checkAuthAndStatus();
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event) => {
+      async (event, session) => {
         if (event === 'SIGNED_OUT') {
+          hasShownStatusToast.current = false;
           router.push('/auth/login');
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Session refreshed successfully
+          console.log('Session refreshed');
+        } else if (event === 'SIGNED_IN' && session) {
+          // Check user status on sign in
+          try {
+            const { data: userProfile } = await supabase
+              .from('user_profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
+            
+            if (userProfile?.role === 'rejected') {
+              toast({
+                title: 'Account Rejected',
+                description: 'Your account request has been rejected.',
+                variant: 'destructive',
+              });
+              await supabase.auth.signOut();
+            }
+          } catch (error) {
+            console.error('Error checking user status on sign in:', error);
+          }
         }
       }
     );
@@ -55,3 +154,4 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
   return <>{children}</>;
 }
+

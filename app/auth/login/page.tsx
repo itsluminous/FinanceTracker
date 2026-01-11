@@ -42,9 +42,18 @@ export default function LoginPage() {
         const { data: signUpData, error } = await signUp(data.email, data.password);
         
         if (error) {
+          // Handle specific error cases
+          let errorMessage = error.message;
+          
+          if (error.message.includes('already registered')) {
+            errorMessage = 'This email is already registered. Please sign in instead.';
+          } else if (error.message.includes('network')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          }
+          
           toast({
             title: 'Sign up failed',
-            description: error.message,
+            description: errorMessage,
             variant: 'destructive',
           });
           setIsLoading(false);
@@ -73,9 +82,20 @@ export default function LoginPage() {
         const { error } = await signIn(data.email, data.password);
         
         if (error) {
+          // Handle specific error cases
+          let errorMessage = error.message;
+          
+          if (error.message.includes('Invalid login credentials')) {
+            errorMessage = 'Invalid email or password. Please try again.';
+          } else if (error.message.includes('Email not confirmed')) {
+            errorMessage = 'Please verify your email before signing in.';
+          } else if (error.message.includes('network')) {
+            errorMessage = 'Network error. Please check your connection and try again.';
+          }
+          
           toast({
             title: 'Sign in failed',
-            description: error.message,
+            description: errorMessage,
             variant: 'destructive',
           });
           setIsLoading(false);
@@ -90,10 +110,16 @@ export default function LoginPage() {
         // Redirect to home page after login
         router.push('/');
       }
-    } catch {
+    } catch (error) {
+      // Handle network failures with retry suggestion
+      const isNetworkError = error instanceof Error && 
+        (error.message.includes('fetch') || error.message.includes('network'));
+      
       toast({
         title: 'Error',
-        description: 'An unexpected error occurred. Please try again.',
+        description: isNetworkError 
+          ? 'Network error. Please check your connection and try again.'
+          : 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
       setIsLoading(false);
