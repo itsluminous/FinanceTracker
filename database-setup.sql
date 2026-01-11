@@ -110,48 +110,64 @@ CREATE INDEX IF NOT EXISTS idx_user_profiles_role
 -- ============================================================================
 
 -- Check if user is admin
-CREATE OR REPLACE FUNCTION is_admin(user_id UUID)
+-- SECURITY DEFINER bypasses RLS to prevent infinite recursion
+CREATE OR REPLACE FUNCTION public.is_admin(user_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM user_profiles
+    SELECT 1 FROM public.user_profiles
     WHERE id = user_id AND role = 'admin'
   );
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Check if user has edit permission for profile
-CREATE OR REPLACE FUNCTION has_edit_permission(user_id UUID, profile_id UUID)
+-- SECURITY DEFINER bypasses RLS to prevent infinite recursion
+CREATE OR REPLACE FUNCTION public.has_edit_permission(user_id UUID, profile_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
   RETURN EXISTS (
-    SELECT 1 FROM user_profile_links
+    SELECT 1 FROM public.user_profile_links
     WHERE user_profile_links.user_id = has_edit_permission.user_id
       AND user_profile_links.profile_id = has_edit_permission.profile_id
       AND permission = 'edit'
-  ) OR is_admin(user_id);
+  ) OR public.is_admin(user_id);
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Trigger to set first user as admin
-CREATE OR REPLACE FUNCTION set_first_user_as_admin()
+-- Trigger to automatically create user_profiles entry when user signs up
+-- This bypasses RLS using SECURITY DEFINER and ensures every auth.users entry has a corresponding user_profiles entry
+-- Based on working reference implementation
+CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER AS $$
+DECLARE
+  user_count INTEGER;
 BEGIN
-  -- Check if this is the first user
-  IF NOT EXISTS (SELECT 1 FROM user_profiles WHERE id != NEW.id) THEN
-    NEW.role := 'admin';
-    NEW.approved_at := NOW();
-  END IF;
+  -- Count existing users in user_profiles
+  -- This determines if the new user is the first user
+  SELECT COUNT(*) INTO user_count FROM public.user_profiles;
+  
+  -- Insert new user profile
+  -- First user (count = 0) becomes admin automatically
+  -- All subsequent users start as pending and require admin approval
+  INSERT INTO public.user_profiles (id, email, role, approved_at)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    CASE WHEN user_count = 0 THEN 'admin' ELSE 'pending' END,
+    CASE WHEN user_count = 0 THEN NOW() ELSE NULL END
+  );
+  
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
 
--- Create trigger for first user admin assignment
-DROP TRIGGER IF EXISTS trigger_first_user_admin ON user_profiles;
-CREATE TRIGGER trigger_first_user_admin
-  BEFORE INSERT ON user_profiles
+-- Create trigger on auth.users table to auto-create user_profiles
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
   FOR EACH ROW
-  EXECUTE FUNCTION set_first_user_as_admin();
+  EXECUTE FUNCTION public.handle_new_user();
 
 -- Trigger to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()
@@ -324,4 +340,4 @@ COMMENT ON TABLE financial_entries IS 'Timestamped financial data entries for pr
 
 COMMENT ON FUNCTION is_admin(UUID) IS 'Check if a user has admin role';
 COMMENT ON FUNCTION has_edit_permission(UUID, UUID) IS 'Check if a user has edit permission for a profile';
-COMMENT ON FUNCTION set_first_user_as_admin() IS 'Automatically assign admin role to the first user';
+COMMENT ON FUNCTION handle_new_user() IS 'Automatically create user_profiles entry when user signs up in auth.users';

@@ -23,25 +23,47 @@ export default function Home() {
   const router = useRouter();
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadUserProfile = async () => {
       try {
         const user = await getCurrentUser();
         
-        if (user) {
-          const { data: profile } = await getUserProfile(user.id);
-          if (profile) {
-            setUserProfile(profile);
-          }
+        if (!isMounted) return;
+        
+        if (!user) {
+          // Not logged in, redirect to login
+          router.push('/auth/login');
+          return;
+        }
+        
+        const { data: profile, error } = await getUserProfile(user.id);
+        
+        if (!isMounted) return;
+        
+        if (error) {
+          console.error('Error loading user profile:', error);
+          // Profile should exist due to database trigger
+        } else if (profile) {
+          setUserProfile(profile);
         }
       } catch (error) {
-        console.error('Error loading user profile:', error);
+        if (isMounted) {
+          console.error('Error loading user profile:', error);
+        }
       } finally {
-        setLoading(false);
+        if (isMounted) {
+          setLoading(false);
+        }
       }
     };
 
     loadUserProfile();
-  }, []);
+
+    return () => {
+      isMounted = false;
+    };
+  }, [router]);
 
   if (loading) {
     return (
@@ -126,7 +148,7 @@ export default function Home() {
             <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
               <h3 className="font-semibold text-yellow-900">Waiting for Approval</h3>
               <p className="mt-1 text-sm text-yellow-800">
-                Your account is pending approval from an administrator. You'll receive a notification once your account is approved.
+                Your account is pending approval from an administrator. You&apos;ll receive a notification once your account is approved.
               </p>
             </div>
           )}

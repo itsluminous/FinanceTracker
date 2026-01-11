@@ -39,7 +39,7 @@ export default function LoginPage() {
 
     try {
       if (isSignUp) {
-        const { error } = await signUp(data.email, data.password);
+        const { data: signUpData, error } = await signUp(data.email, data.password);
         
         if (error) {
           toast({
@@ -47,14 +47,28 @@ export default function LoginPage() {
             description: error.message,
             variant: 'destructive',
           });
-        } else {
-          toast({
-            title: 'Account created',
-            description: 'Please check your email to verify your account.',
-          });
-          // Redirect to home page after signup
-          router.push('/');
+          setIsLoading(false);
+          return;
         }
+        
+        // Check if email confirmation is required
+        if (signUpData.user && !signUpData.session) {
+          toast({
+            title: 'Check your email',
+            description: 'Please check your email to verify your account before signing in.',
+          });
+          setIsLoading(false);
+          return;
+        }
+        
+        // Successful signup with immediate session
+        toast({
+          title: 'Account created',
+          description: 'Your account has been created successfully.',
+        });
+        
+        // Redirect to home page after signup
+        router.push('/');
       } else {
         const { error } = await signIn(data.email, data.password);
         
@@ -64,22 +78,24 @@ export default function LoginPage() {
             description: error.message,
             variant: 'destructive',
           });
-        } else {
-          toast({
-            title: 'Welcome back!',
-            description: 'You have successfully signed in.',
-          });
-          // Redirect to home page after login
-          router.push('/');
+          setIsLoading(false);
+          return;
         }
+        
+        toast({
+          title: 'Welcome back!',
+          description: 'You have successfully signed in.',
+        });
+        
+        // Redirect to home page after login
+        router.push('/');
       }
-    } catch (error) {
+    } catch {
       toast({
         title: 'Error',
         description: 'An unexpected error occurred. Please try again.',
         variant: 'destructive',
       });
-    } finally {
       setIsLoading(false);
     }
   };

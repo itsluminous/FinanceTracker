@@ -12,7 +12,13 @@ import * as fc from 'fast-check';
 
 // Mock Supabase module
 vi.mock('@supabase/supabase-js', () => {
-  let mockSession: any = null;
+  interface MockSession {
+    user: { id: string; email: string };
+    access_token: string;
+    refresh_token?: string;
+  }
+  
+  let mockSession: MockSession | null = null;
   
   return {
     createClient: vi.fn(() => ({
@@ -28,7 +34,7 @@ vi.mock('@supabase/supabase-js', () => {
         onAuthStateChange: vi.fn(() => ({
           data: { subscription: { unsubscribe: vi.fn() } },
         })),
-        signInWithPassword: vi.fn(async ({ email, password }: any) => {
+        signInWithPassword: vi.fn(async ({ email, password }: { email: string; password: string }) => {
           if (email && password) {
             mockSession = {
               user: { id: 'test-user-id', email },
@@ -52,7 +58,7 @@ vi.mock('@supabase/supabase-js', () => {
         })),
       })),
     })),
-    __setMockSession: (session: any) => {
+    __setMockSession: (session: MockSession | null) => {
       mockSession = session;
     },
     __getMockSession: () => mockSession,
