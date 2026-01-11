@@ -288,7 +288,7 @@ describe('Property Test: Profile Deletion Cascade', () => {
           ),
           entries: fc.array(
             fc.record({
-              entryDate: fc.date().map(d => d.toISOString().split('T')[0]),
+              entryDate: fc.integer({ min: 1577836800000, max: 1924905600000 }).map(ts => new Date(ts).toISOString().split('T')[0]),
               totalAssets: fc.float({ min: 0, max: 10000000, noNaN: true }),
             }),
             { minLength: 1, maxLength: 5 }
