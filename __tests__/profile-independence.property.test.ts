@@ -47,7 +47,7 @@ vi.mock('@supabase/supabase-js', () => {
                 })),
               };
             }),
-            select: vi.fn((fields?: string) => ({
+            select: vi.fn((_fields?: string) => ({
               eq: vi.fn((field: string, value: string) => ({
                 single: vi.fn(async () => {
                   const profile = mockProfiles.find((p) => p[field as keyof MockProfile] === value);

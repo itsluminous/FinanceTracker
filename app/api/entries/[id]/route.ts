@@ -88,7 +88,7 @@ export async function PUT(
     const { entry_date, high_medium_risk, low_risk } = body;
 
     // Build update object
-    const updateData: any = {
+    const updateData: Record<string, string | number> = {
       updated_at: new Date().toISOString(),
     };
 

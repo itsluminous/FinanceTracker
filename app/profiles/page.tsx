@@ -10,7 +10,6 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 export default function ProfilesPage() {
-  const [user, setUser] = useState<any>(null);
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
@@ -24,7 +23,6 @@ export default function ProfilesPage() {
           router.push('/auth/login');
           return;
         }
-        setUser(currentUser);
       } catch (error) {
         console.error('Error loading user:', error);
         router.push('/auth/login');
