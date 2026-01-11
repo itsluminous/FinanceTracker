@@ -4,6 +4,7 @@ import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
 import { supabase, getUserProfile } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
 export function AuthHandler({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true);
@@ -101,7 +102,7 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
     // Listen for auth state changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (event: string, session: any) => {
+      async (event: AuthChangeEvent, session: Session | null) => {
         if (event === 'SIGNED_OUT') {
           hasShownStatusToast.current = false;
           router.push('/auth/login');
