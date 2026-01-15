@@ -136,6 +136,17 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
               </div>
             </div>
           )}
+
+          {/* Profile Selector Always Visible on Mobile */}
+          {showProfileSelector && canAccessProfiles && (
+            <div className="md:hidden pb-4 px-4">
+              <ProfileSelector
+                onProfileSelect={(profileId) => onProfileSelect?.(profileId)}
+                onAddProfile={() => setShowProfileDialog(true)}
+                selectedProfileId={selectedProfileId}
+              />
+            </div>
+          )}
         </div>
 
         {/* Mobile Menu */}
@@ -153,24 +164,6 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
                 >
                   Profiles
                 </Button>
-              )}
-
-              {/* Profile Selector in Mobile Menu */}
-              {showProfileSelector && canAccessProfiles && (
-                <div className="pt-4 border-t border-border">
-                  <span className="text-sm font-medium text-muted-foreground block mb-2">Profile:</span>
-                  <ProfileSelector
-                    onProfileSelect={(profileId) => {
-                      onProfileSelect?.(profileId);
-                      setMobileMenuOpen(false);
-                    }}
-                    onAddProfile={() => {
-                      setShowProfileDialog(true);
-                      setMobileMenuOpen(false);
-                    }}
-                    selectedProfileId={selectedProfileId}
-                  />
-                </div>
               )}
             </div>
           </div>

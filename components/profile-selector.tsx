@@ -148,7 +148,7 @@ export function ProfileSelector({
           </SelectContent>
         </Select>
         <Button onClick={onAddProfile} variant="outline" size="sm">
-          Add
+          Add New Profile
         </Button>
       </div>
     );
