@@ -1,11 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { signIn, signUp } from '@/lib/supabase';
+import { signIn, signUp, supabase } from '@/lib/supabase';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -25,6 +25,31 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  // Clear any stale session on mount
+  useEffect(() => {
+    const clearStaleSession = async () => {
+      try {
+        // Try to get current session
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        // If there's an error or session exists, clear it to start fresh
+        if (error || session) {
+          await supabase.auth.signOut();
+        }
+      } catch (error) {
+        console.error('Error clearing stale session:', error);
+        // Force clear local storage if API fails
+        try {
+          await supabase.auth.signOut();
+        } catch {
+          // Ignore errors during cleanup
+        }
+      }
+    };
+    
+    clearStaleSession();
+  }, []);
 
   const {
     register,

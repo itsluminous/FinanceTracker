@@ -6,8 +6,44 @@ import { supabase, getUserProfile } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
 
+// Helper to get cached auth state from localStorage
+const getCachedAuthState = () => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    const cached = localStorage.getItem('auth-state-cache');
+    if (cached) {
+      const parsed = JSON.parse(cached);
+      const age = Date.now() - parsed.timestamp;
+      const TTL = 30 * 24 * 60 * 60 * 1000; // 30 days
+      
+      if (age < TTL && parsed.user) {
+        return { hasUser: true };
+      }
+    }
+  } catch (e) {
+    console.error('[Auth] Error reading cache:', e);
+  }
+  return null;
+};
+
+// Helper to set cached auth state in localStorage
+const setCachedAuthState = (user: unknown) => {
+  if (typeof window === 'undefined') return;
+  
+  try {
+    localStorage.setItem('auth-state-cache', JSON.stringify({
+      user,
+      timestamp: Date.now()
+    }));
+  } catch (e) {
+    console.error('[Auth] Error writing cache:', e);
+  }
+};
+
 export function AuthHandler({ children }: { children: React.ReactNode }) {
-  const [loading, setLoading] = useState(true);
+  const cachedState = getCachedAuthState();
+  const [loading, setLoading] = useState(!cachedState);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -23,11 +59,13 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
     const checkAuthAndStatus = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        // Use getUser() - more reliable than getSession() on mobile
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         
-        // Handle session errors
-        if (sessionError) {
-          console.error('Session error:', sessionError);
+        // Handle user errors
+        if (userError) {
+          console.error('❌ [AuthHandler] User error:', userError);
+          setCachedAuthState(null);
           if (pathname !== '/auth/login') {
             toast({
               title: 'Session Error',
@@ -40,19 +78,25 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
           return;
         }
         
-        if (!session && pathname !== '/auth/login') {
+        if (!user && pathname !== '/auth/login') {
+          setCachedAuthState(null);
           router.push('/auth/login');
           setLoading(false);
           return;
         }
         
+        // Cache the user
+        if (user) {
+          setCachedAuthState(user);
+        }
+        
         // Check user status if logged in
-        if (session && !hasShownStatusToast.current) {
+        if (user && !hasShownStatusToast.current) {
           try {
-            const { data: userProfile, error: profileError } = await getUserProfile(session.user.id);
+            const { data: userProfile, error: profileError } = await getUserProfile(user.id);
             
             if (profileError) {
-              console.error('Error fetching user profile:', profileError);
+              console.error('❌ [AuthHandler] Error fetching user profile:', profileError);
             } else if (userProfile) {
               // Show toast for pending users
               if (userProfile.role === 'pending') {
@@ -73,26 +117,29 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
                 hasShownStatusToast.current = true;
                 // Sign out rejected users
                 await supabase.auth.signOut();
+                setCachedAuthState(null);
                 router.push('/auth/login');
                 setLoading(false);
                 return;
               }
             }
           } catch (error) {
-            console.error('Error checking user status:', error);
+            console.error('❌ [AuthHandler] Error checking user status:', error);
           }
         }
         
         setLoading(false);
       } catch (error) {
-        console.error('Auth check error:', error);
-        // Handle network errors gracefully
+        console.error('❌ [AuthHandler] Auth check error:', error);
+        setCachedAuthState(null);
+        
         if (pathname !== '/auth/login') {
           toast({
             title: 'Connection Error',
-            description: 'Unable to verify your session. Please check your connection.',
+            description: 'Unable to verify your session. Please sign in again.',
             variant: 'destructive',
           });
+          router.push('/auth/login');
         }
         setLoading(false);
       }
@@ -100,32 +147,39 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
     checkAuthAndStatus();
 
-    // Listen for auth state changes
+    // Listen for auth state changes (non-blocking)
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: AuthChangeEvent, session: Session | null) => {
-        if (event === 'SIGNED_OUT') {
-          hasShownStatusToast.current = false;
-          router.push('/auth/login');
-        } else if (event === 'TOKEN_REFRESHED') {
-          // Session refreshed successfully
-          console.log('Session refreshed');
-        } else if (event === 'SIGNED_IN' && session) {
-          // Check user status on sign in
-          try {
-            const { data: userProfile } = await getUserProfile(session.user.id);
-            
-            if (userProfile?.role === 'rejected') {
-              toast({
-                title: 'Account Rejected',
-                description: 'Your account request has been rejected.',
-                variant: 'destructive',
-              });
-              await supabase.auth.signOut();
+        // Use setTimeout to make this non-blocking
+        setTimeout(async () => {
+          if (event === 'SIGNED_OUT') {
+            hasShownStatusToast.current = false;
+            setCachedAuthState(null);
+            router.push('/auth/login');
+          } else if (event === 'TOKEN_REFRESHED') {
+            if (session?.user) {
+              setCachedAuthState(session.user);
             }
-          } catch (error) {
-            console.error('Error checking user status on sign in:', error);
+          } else if (event === 'SIGNED_IN' && session) {
+            setCachedAuthState(session.user);
+            // Check user status on sign in
+            try {
+              const { data: userProfile } = await getUserProfile(session.user.id);
+              
+              if (userProfile?.role === 'rejected') {
+                toast({
+                  title: 'Account Rejected',
+                  description: 'Your account request has been rejected.',
+                  variant: 'destructive',
+                });
+                await supabase.auth.signOut();
+                setCachedAuthState(null);
+              }
+            } catch (error) {
+              console.error('Error checking user status on sign in:', error);
+            }
           }
-        }
+        }, 0);
       }
     );
 

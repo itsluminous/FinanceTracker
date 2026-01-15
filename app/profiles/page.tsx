@@ -96,8 +96,8 @@ export default function ProfilesPage() {
             <FinancialEntryForm
               profileId={selectedProfileId}
               onSuccess={() => {
-                // Optionally refresh or show success message
-                console.log('Entry saved successfully');
+                // Cache cleared automatically in FinancialEntryForm
+                // Any analytics/portfolio components will refetch on next load
               }}
             />
           )}

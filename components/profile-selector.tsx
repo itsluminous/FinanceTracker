@@ -47,8 +47,17 @@ export function ProfileSelector({
     try {
       setLoading(true);
       
+      // Add timeout to prevent infinite loading
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Profile loading timeout')), 10000)
+      );
+      
       // Get current session
-      const { data: { session } } = await supabase.auth.getSession();
+      const sessionPromise = supabase.auth.getSession();
+      const { data: { session } } = await Promise.race([
+        sessionPromise,
+        timeoutPromise
+      ]) as Awaited<ReturnType<typeof supabase.auth.getSession>>;
       
       if (!session) {
         toast({
@@ -56,15 +65,23 @@ export function ProfileSelector({
           description: 'You must be logged in to view profiles',
           variant: 'destructive',
         });
+        setLoading(false);
         return;
       }
 
-      // Fetch profiles
-      const response = await fetch('/api/profiles', {
+      // Fetch profiles with timeout
+      const fetchPromise = fetch('/api/profiles', {
         headers: {
           'Authorization': `Bearer ${session.access_token}`,
         },
       });
+      
+      const response = await Promise.race([
+        fetchPromise,
+        new Promise<Response>((_, reject) => 
+          setTimeout(() => reject(new Error('API timeout')), 10000)
+        )
+      ]);
 
       if (response.ok) {
         const data = await response.json();
@@ -86,7 +103,9 @@ export function ProfileSelector({
       console.error('Error loading profiles:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load profiles',
+        description: error instanceof Error && error.message.includes('timeout') 
+          ? 'Request timed out. Please check your connection and try again.'
+          : 'Failed to load profiles',
         variant: 'destructive',
       });
     } finally {

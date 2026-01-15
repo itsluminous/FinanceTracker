@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthHandler } from "@/components/auth-handler";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { DebugConsole } from "@/components/debug-console";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -41,6 +42,7 @@ export default function RootLayout({
             {children}
           </AuthHandler>
           <Toaster />
+          {process.env.NODE_ENV === 'development' && <DebugConsole />}
         </ThemeProvider>
       </body>
     </html>

@@ -10,6 +10,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { FinancialEntryFormSkeleton } from './loading-skeletons';
+import { clearAllCache } from '@/lib/cache';
 
 interface FinancialEntryFormProps {
   profileId: string;
@@ -103,60 +104,62 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   const totalAssets = totalHighMediumRisk + totalLowRisk;
 
   // Fetch latest entry to pre-fill form
-  useEffect(() => {
-    const fetchLatestEntry = async () => {
-      try {
-        // Get the current session to get the access token
-        const { data: { session } } = await supabase.auth.getSession();
-        
-        if (!session) {
-          console.error('No session found');
-          setIsLoadingLatest(false);
-          return;
-        }
-
-        const response = await fetch(`/api/profiles/${profileId}/entries/latest`, {
-          headers: {
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          if (data.entry) {
-            // Pre-fill with latest data
-            setHighMediumRisk({
-              direct_equity: data.entry.direct_equity || 0,
-              esops: data.entry.esops || 0,
-              equity_pms: data.entry.equity_pms || 0,
-              ulip: data.entry.ulip || 0,
-              real_estate: data.entry.real_estate || 0,
-              real_estate_funds: data.entry.real_estate_funds || 0,
-              private_equity: data.entry.private_equity || 0,
-              equity_mutual_funds: data.entry.equity_mutual_funds || 0,
-              structured_products_equity: data.entry.structured_products_equity || 0,
-            });
-            setLowRisk({
-              bank_balance: data.entry.bank_balance || 0,
-              debt_mutual_funds: data.entry.debt_mutual_funds || 0,
-              endowment_plans: data.entry.endowment_plans || 0,
-              fixed_deposits: data.entry.fixed_deposits || 0,
-              nps: data.entry.nps || 0,
-              epf: data.entry.epf || 0,
-              ppf: data.entry.ppf || 0,
-              structured_products_debt: data.entry.structured_products_debt || 0,
-              gold_etfs_funds: data.entry.gold_etfs_funds || 0,
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching latest entry:', error);
-      } finally {
+  const fetchLatestEntry = async () => {
+    try {
+      setIsLoadingLatest(true);
+      // Get the current session to get the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No session found');
         setIsLoadingLatest(false);
+        return;
       }
-    };
 
+      const response = await fetch(`/api/profiles/${profileId}/entries/latest`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.entry) {
+          // Pre-fill with latest data
+          setHighMediumRisk({
+            direct_equity: data.entry.direct_equity || 0,
+            esops: data.entry.esops || 0,
+            equity_pms: data.entry.equity_pms || 0,
+            ulip: data.entry.ulip || 0,
+            real_estate: data.entry.real_estate || 0,
+            real_estate_funds: data.entry.real_estate_funds || 0,
+            private_equity: data.entry.private_equity || 0,
+            equity_mutual_funds: data.entry.equity_mutual_funds || 0,
+            structured_products_equity: data.entry.structured_products_equity || 0,
+          });
+          setLowRisk({
+            bank_balance: data.entry.bank_balance || 0,
+            debt_mutual_funds: data.entry.debt_mutual_funds || 0,
+            endowment_plans: data.entry.endowment_plans || 0,
+            fixed_deposits: data.entry.fixed_deposits || 0,
+            nps: data.entry.nps || 0,
+            epf: data.entry.epf || 0,
+            ppf: data.entry.ppf || 0,
+            structured_products_debt: data.entry.structured_products_debt || 0,
+            gold_etfs_funds: data.entry.gold_etfs_funds || 0,
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching latest entry:', error);
+    } finally {
+      setIsLoadingLatest(false);
+    }
+  };
+
+  useEffect(() => {
     fetchLatestEntry();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId]);
 
   const handleHighMediumRiskChange = (name: string, value: number) => {
@@ -280,10 +283,16 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
         console.error('Error clearing draft:', error);
       }
 
+      // Clear all analytics cache to force refresh
+      clearAllCache();
+
       toast({
         title: 'Success',
         description: 'Financial entry saved successfully',
       });
+
+      // Refetch latest entry to update form with saved data
+      await fetchLatestEntry();
 
       if (onSuccess) {
         onSuccess();
