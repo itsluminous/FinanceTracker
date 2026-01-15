@@ -153,7 +153,8 @@ describe('MainNav Component', () => {
     render(<MainNav showProfileSelector />);
 
     await waitFor(() => {
-      expect(screen.getByText('Select Profile')).toBeInTheDocument();
+      // Should have two instances: one for desktop, one for mobile
+      expect(screen.getAllByText('Select Profile')).toHaveLength(2);
     });
   });
 
@@ -178,10 +179,11 @@ describe('MainNav Component', () => {
     render(<MainNav showProfileSelector onProfileSelect={mockOnProfileSelect} />);
 
     await waitFor(() => {
-      expect(screen.getByText('Select Profile')).toBeInTheDocument();
+      expect(screen.getAllByText('Select Profile')).toHaveLength(2);
     });
 
-    await user.click(screen.getByText('Select Profile'));
+    // Click the first instance (desktop or mobile)
+    await user.click(screen.getAllByText('Select Profile')[0]);
 
     expect(mockOnProfileSelect).toHaveBeenCalledWith('profile-1');
   });

@@ -1,9 +1,8 @@
 # Personal Finance Tracker
 
-[![CI](https://github.com/itsluminous/personal-finance-tracker/actions/workflows/ci.yml/badge.svg)](https://github.com/itsluminous/personal-finance-tracker/actions/workflows/ci.yml)
+[![CI](https://github.com/itsluminous/FinanceTracker/actions/workflows/ci.yml/badge.svg)](https://github.com/itsluminous/FinanceTracker/actions/workflows/ci.yml)
 [![Next.js](https://img.shields.io/badge/Next.js-16.1.1-black?logo=next.js)](https://nextjs.org/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue?logo=typescript)](https://www.typescriptlang.org/)
-[![Tests](https://img.shields.io/badge/tests-202%20passing-brightgreen)](https://github.com/itsluminous/personal-finance-tracker)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL-green?logo=supabase)](https://supabase.com/)
 
 A responsive web application for tracking and visualizing financial assets across multiple profiles with role-based access control.
@@ -89,7 +88,7 @@ npm start            # Start production server
 
 ## Testing
 
-The application has comprehensive test coverage with **202 passing tests**:
+The application has comprehensive test coverage:
 
 - ✅ Unit tests for all core functionality
 - ✅ Integration tests for component interactions  
@@ -111,8 +110,8 @@ npm run test:ui
 
 ### Test Coverage
 
-- **26 test files** covering all features
-- **15 property-based tests** validating correctness properties
+- **Test files** covering all features
+- **Property-based tests** validating correctness properties
 - All authentication, authorization, and data management flows tested
 - Responsive design and error handling verified
 
@@ -182,7 +181,7 @@ GitHub Actions workflow (`.github/workflows/ci.yml`) automatically:
 - Runs on push to `main` and `develop` branches
 - Runs on pull requests
 - Executes linting checks
-- Runs all 202 tests
+- Runs all tests
 - Builds the application
 
 ### Setting up GitHub Secrets (Optional)
@@ -210,7 +209,7 @@ personal-finance-tracker/
 │   ├── ui/               # Reusable UI components
 │   └── ...               # Feature components
 ├── lib/                   # Utility functions and types
-├── __tests__/            # Test files (202 tests)
+├── __tests__/            # Test files
 ├── database-setup.sql    # Database schema and RLS policies
 └── .github/workflows/    # CI/CD configuration
 ```
