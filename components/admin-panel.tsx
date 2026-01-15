@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/select';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { AdminPanelSkeleton } from './loading-skeletons';
+import { supabase, getCurrentUser } from '@/lib/supabase';
 
 interface PendingUser {
   id: string;
@@ -40,24 +41,45 @@ export function AdminPanel() {
     try {
       setLoading(true);
       
-      // Fetch pending users
-      const usersResponse = await fetch('/api/admin/users/pending');
-      if (usersResponse.ok) {
-        const usersData = await usersResponse.json();
-        setPendingUsers(usersData.users || []);
+      // Fetch pending users directly from Supabase (RLS handles security)
+      const { data: usersData, error: usersError } = await supabase
+        .from('user_profiles')
+        .select('id, email, name, created_at')
+        .eq('role', 'pending')
+        .order('created_at', { ascending: true });
+
+      if (usersError) {
+        console.error('Error fetching pending users:', usersError);
+        toast({
+          title: 'Error',
+          description: 'Failed to load pending users',
+          variant: 'destructive',
+        });
+      } else {
+        setPendingUsers(usersData || []);
       }
 
       // Fetch all profiles for linking
-      const profilesResponse = await fetch('/api/admin/profiles');
-      if (profilesResponse.ok) {
-        const profilesData = await profilesResponse.json();
-        setProfiles(profilesData.profiles || []);
+      const { data: profilesData, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, name, created_at')
+        .order('name', { ascending: true });
+
+      if (profilesError) {
+        console.error('Error fetching profiles:', profilesError);
+        toast({
+          title: 'Error',
+          description: 'Failed to load profiles',
+          variant: 'destructive',
+        });
+      } else {
+        setProfiles(profilesData || []);
       }
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
         title: 'Error',
-        description: 'Failed to load pending users and profiles',
+        description: 'Failed to load data',
         variant: 'destructive',
       });
     } finally {
@@ -107,46 +129,79 @@ export function AdminPanel() {
     try {
       setProcessingUserId(userId);
       
-      const response = await fetch(`/api/admin/users/${userId}/approve`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          role,
-          profileLinks: profileLinks.map(profileId => ({
-            profileId,
-            permission,
-          })),
-        }),
-      });
-
-      if (response.ok) {
-        toast({
-          title: 'User Approved',
-          description: `User has been approved with ${role} role`,
-        });
-        
-        // Remove user from pending list
-        setPendingUsers(prev => prev.filter(u => u.id !== userId));
-        
-        // Clear selections
-        setSelectedRoles(prev => {
-          const newRoles = { ...prev };
-          delete newRoles[userId];
-          return newRoles;
-        });
-        setSelectedProfiles(prev => {
-          const newProfiles = { ...prev };
-          delete newProfiles[userId];
-          return newProfiles;
-        });
-      } else {
-        const error = await response.json();
+      const currentUser = await getCurrentUser();
+      if (!currentUser) {
         toast({
           title: 'Error',
-          description: error.error || 'Failed to approve user',
+          description: 'You must be logged in',
           variant: 'destructive',
         });
+        return;
       }
+
+      // Update user role directly via Supabase (RLS handles security)
+      const { error: updateError } = await supabase
+        .from('user_profiles')
+        .update({
+          role,
+          approved_at: new Date().toISOString(),
+          approved_by: currentUser.id,
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', userId);
+
+      if (updateError) {
+        console.error('Error updating user role:', updateError);
+        toast({
+          title: 'Error',
+          description: 'Failed to approve user',
+          variant: 'destructive',
+        });
+        return;
+      }
+
+      // Create profile links if any selected
+      if (profileLinks.length > 0) {
+        const linksToInsert = profileLinks.map(profileId => ({
+          user_id: userId,
+          profile_id: profileId,
+          permission,
+        }));
+
+        const { error: linksError } = await supabase
+          .from('user_profile_links')
+          .insert(linksToInsert);
+
+        if (linksError) {
+          console.error('Error creating profile links:', linksError);
+          // Don't fail the whole operation, just warn
+          toast({
+            title: 'Warning',
+            description: 'User approved but some profile links failed',
+            variant: 'destructive',
+          });
+        }
+      }
+
+      toast({
+        title: 'User Approved',
+        description: `User has been approved with ${role} role`,
+      });
+      
+      // Remove user from pending list
+      setPendingUsers(prev => prev.filter(u => u.id !== userId));
+      
+      // Clear selections
+      setSelectedRoles(prev => {
+        const newRoles = { ...prev };
+        delete newRoles[userId];
+        return newRoles;
+      });
+      setSelectedProfiles(prev => {
+        const newProfiles = { ...prev };
+        delete newProfiles[userId];
+        return newProfiles;
+      });
     } catch (error) {
       console.error('Error approving user:', error);
       toast({
@@ -163,26 +218,29 @@ export function AdminPanel() {
     try {
       setProcessingUserId(userId);
       
-      const response = await fetch(`/api/admin/users/${userId}/reject`, {
-        method: 'POST',
-      });
+      // Delete user profile directly via Supabase (RLS handles security)
+      const { error } = await supabase
+        .from('user_profiles')
+        .delete()
+        .eq('id', userId);
 
-      if (response.ok) {
-        toast({
-          title: 'User Rejected',
-          description: 'User has been rejected',
-        });
-        
-        // Remove user from pending list
-        setPendingUsers(prev => prev.filter(u => u.id !== userId));
-      } else {
-        const error = await response.json();
+      if (error) {
+        console.error('Error deleting user profile:', error);
         toast({
           title: 'Error',
-          description: error.error || 'Failed to reject user',
+          description: 'Failed to reject user',
           variant: 'destructive',
         });
+        return;
       }
+
+      toast({
+        title: 'User Rejected',
+        description: 'User has been rejected',
+      });
+      
+      // Remove user from pending list
+      setPendingUsers(prev => prev.filter(u => u.id !== userId));
     } catch (error) {
       console.error('Error rejecting user:', error);
       toast({

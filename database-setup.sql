@@ -211,10 +211,17 @@ ALTER TABLE financial_entries ENABLE ROW LEVEL SECURITY;
 -- USER_PROFILES POLICIES
 -- ============================================================================
 
--- Users can view their own profile, admins can view all
-CREATE POLICY "Users view own profile" ON user_profiles
-  FOR SELECT 
-  USING (auth.uid() = id OR is_admin(auth.uid()));
+-- Policy: Users can view their own profile
+-- This allows users to see their own role and approval status
+CREATE POLICY "Users can view their own profile."
+ON user_profiles FOR SELECT
+USING (auth.uid() = id);
+
+-- Policy: Admins can view all profiles
+-- Uses SECURITY DEFINER function to avoid infinite recursion
+CREATE POLICY "Admins can view all profiles."
+ON user_profiles FOR SELECT
+USING (public.is_admin(auth.uid()));
 
 -- Only admins can update user profiles
 CREATE POLICY "Admins update profiles" ON user_profiles
