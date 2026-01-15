@@ -20,7 +20,7 @@ interface PendingUser {
   email: string;
   name?: string;
   created_at: string;
-  role: string;
+  role: 'admin' | 'approved' | 'pending' | 'rejected';
   approved_at?: string;
 }
 
@@ -67,10 +67,11 @@ export function AdminPanel() {
           variant: 'destructive',
         });
       } else {
-        setAllUsers(usersData || []);
+        const typedUsers = (usersData || []) as PendingUser[];
+        setAllUsers(typedUsers);
         
         // Load profile links for all approved users
-        const approvedUserIds = (usersData || [])
+        const approvedUserIds = typedUsers
           .filter(u => u.role === 'approved')
           .map(u => u.id);
         
@@ -193,11 +194,11 @@ export function AdminPanel() {
       const { error: updateError } = await supabase
         .from('user_profiles')
         .update({
-          role: dbRole,
+          role: dbRole as 'admin' | 'approved' | 'pending' | 'rejected',
           approved_at: new Date().toISOString(),
           approved_by: currentUser.id,
           updated_at: new Date().toISOString(),
-        })
+        } as never)
         .eq('id', userId);
 
       if (updateError) {
@@ -215,12 +216,12 @@ export function AdminPanel() {
         const linksToInsert = profileLinks.map(profileId => ({
           user_id: userId,
           profile_id: profileId,
-          permission,
+          permission: permission as 'read' | 'edit',
         }));
 
         const { error: linksError } = await supabase
           .from('user_profile_links')
-          .insert(linksToInsert);
+          .insert(linksToInsert as never);
 
         if (linksError) {
           console.error('Error creating profile links:', linksError);
@@ -328,12 +329,12 @@ export function AdminPanel() {
         const linksToInsert = profileLinks.map(profileId => ({
           user_id: userId,
           profile_id: profileId,
-          permission,
+          permission: permission as 'read' | 'edit',
         }));
 
         const { error: linksError } = await supabase
           .from('user_profile_links')
-          .insert(linksToInsert);
+          .insert(linksToInsert as never);
 
         if (linksError) {
           console.error('Error updating profile links:', linksError);

@@ -1,5 +1,6 @@
 import { createClient, User } from '@supabase/supabase-js';
 import { UserProfile } from './types';
+import { Database } from './database.types';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -19,7 +20,7 @@ if (isBrowser && process.env.NODE_ENV === 'development' && (!supabaseUrl || !sup
 }
 
 // Create a singleton Supabase client to avoid multiple instances
-let supabaseInstance: ReturnType<typeof createClient> | null = null;
+let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 
 function getSupabaseClient() {
   // If environment variables are missing, throw a helpful error
@@ -30,11 +31,11 @@ function getSupabaseClient() {
       );
     }
   // During build/SSR, return a mock client to prevent build failures
-  return null as unknown as ReturnType<typeof createClient>;
+  return null as unknown as ReturnType<typeof createClient<Database>>;
   }
 
   if (!supabaseInstance) {
-    supabaseInstance = createClient(supabaseUrl, supabaseAnonKey, {
+    supabaseInstance = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
