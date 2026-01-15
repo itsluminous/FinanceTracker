@@ -54,6 +54,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
   const isActive = (path: string) => pathname === path;
 
   const canAccessProfiles = userProfile?.role === 'admin' || userProfile?.role === 'approved';
+  const canEditProfiles = userProfile?.role === 'admin' || userProfile?.role === 'approved';
 
   if (loading) {
     return (
@@ -92,7 +93,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-2">
-              {canAccessProfiles && (
+              {canEditProfiles && (
                 <Button
                   variant={isActive('/profiles') ? 'secondary' : 'outline'}
                   onClick={() => router.push('/profiles')}
@@ -153,7 +154,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
         {mobileMenuOpen && (
           <div className="md:hidden border-t border-border bg-card">
             <div className="px-4 py-3 space-y-2">
-              {canAccessProfiles && (
+              {canEditProfiles && (
                 <Button
                   variant={isActive('/profiles') ? 'secondary' : 'outline'}
                   onClick={() => {

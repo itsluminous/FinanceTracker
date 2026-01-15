@@ -313,7 +313,7 @@ export function Portfolio() {
             {(userProfile?.role === 'approved' || userProfile?.role === 'admin') && (
               <div className="flex gap-3">
                 <Button variant="secondary" onClick={() => router.push('/profiles')} className="flex-1">
-                  Manage Profiles
+                  Add Financial Data
                 </Button>
               </div>
             )}

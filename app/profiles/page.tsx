@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser, getUserProfile } from '@/lib/supabase';
+import { getCurrentUser, getUserProfile, supabase } from '@/lib/supabase';
 import { MainNav } from '@/components/main-nav';
 import { FinancialEntryForm } from '@/components/financial-entry-form';
 import { Card, CardContent } from '@/components/ui/card';
@@ -11,6 +11,7 @@ import { PageLoadingSkeleton } from '@/components/loading-skeletons';
 
 export default function ProfilesPage() {
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  const [hasEditPermission, setHasEditPermission] = useState(false);
   const [loading, setLoading] = useState(true);
   const router = useRouter();
   const { toast } = useToast();
@@ -59,6 +60,20 @@ export default function ProfilesPage() {
             router.push('/');
             return;
           }
+
+          // Only admins and approved users can add financial data
+          // Read-only users should not access this page
+          if (profile.role !== 'admin' && profile.role !== 'approved') {
+            toast({
+              title: 'Access Denied',
+              description: 'You do not have permission to add financial data.',
+              variant: 'destructive',
+            });
+            router.push('/');
+            return;
+          }
+
+          setHasEditPermission(true);
         }
       } catch (error) {
         console.error('Error loading user:', error);
@@ -76,6 +91,34 @@ export default function ProfilesPage() {
     loadUser();
   }, [router, toast]);
 
+  // Check edit permission for selected profile
+  useEffect(() => {
+    const checkProfilePermission = async () => {
+      if (!selectedProfileId) return;
+
+      const currentUser = await getCurrentUser();
+      if (!currentUser) return;
+
+      const { data: profile } = await getUserProfile(currentUser.id);
+      if (profile?.role === 'admin') {
+        setHasEditPermission(true);
+        return;
+      }
+
+      // Check if user has edit permission for this specific profile
+      const { data: link } = await supabase
+        .from('user_profile_links')
+        .select('permission')
+        .eq('user_id', currentUser.id)
+        .eq('profile_id', selectedProfileId)
+        .single();
+
+      setHasEditPermission((link as { permission: 'read' | 'edit' } | null)?.permission === 'edit');
+    };
+
+    checkProfilePermission();
+  }, [selectedProfileId]);
+
   if (loading) {
     return <PageLoadingSkeleton />;
   }
@@ -92,7 +135,7 @@ export default function ProfilesPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="space-y-6">
           {/* Financial Entry Form */}
-          {selectedProfileId && (
+          {selectedProfileId && hasEditPermission && (
             <FinancialEntryForm
               profileId={selectedProfileId}
               onSuccess={() => {
@@ -100,6 +143,15 @@ export default function ProfilesPage() {
                 // Any analytics/portfolio components will refetch on next load
               }}
             />
+          )}
+
+          {selectedProfileId && !hasEditPermission && (
+            <Card>
+              <CardContent className="py-12 text-center text-gray-500">
+                <p>You have read-only access to this profile.</p>
+                <p className="text-sm mt-2">Contact an administrator to request edit permissions.</p>
+              </CardContent>
+            </Card>
           )}
 
           {!selectedProfileId && (
