@@ -188,17 +188,19 @@ export function AdminPanel() {
       }
 
       // Map UI role to database role
-      const dbRole = role === 'approved_read' || role === 'approved_edit' ? 'approved' : role;
+      // 'admin' stays as 'admin', both 'approved_read' and 'approved_edit' become 'approved'
+      const dbRole: 'admin' | 'approved' = role === 'admin' ? 'admin' : 'approved';
 
       // Update user role directly via Supabase (RLS handles security)
-      const { error: updateError } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: updateError } = await (supabase as any)
         .from('user_profiles')
         .update({
-          role: dbRole as 'admin' | 'approved' | 'pending' | 'rejected',
+          role: dbRole,
           approved_at: new Date().toISOString(),
           approved_by: currentUser.id,
           updated_at: new Date().toISOString(),
-        } as never)
+        })
         .eq('id', userId);
 
       if (updateError) {
@@ -211,17 +213,19 @@ export function AdminPanel() {
         return;
       }
 
-      // Create profile links if any selected
-      if (profileLinks.length > 0) {
+      // Create profile links if any selected (only for non-admin users)
+      // Admins have access to all profiles automatically
+      if (profileLinks.length > 0 && role !== 'admin') {
         const linksToInsert = profileLinks.map(profileId => ({
           user_id: userId,
           profile_id: profileId,
-          permission: permission as 'read' | 'edit',
+          permission,
         }));
 
-        const { error: linksError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linksError } = await (supabase as any)
           .from('user_profile_links')
-          .insert(linksToInsert as never);
+          .insert(linksToInsert);
 
         if (linksError) {
           console.error('Error creating profile links:', linksError);
@@ -275,7 +279,8 @@ export function AdminPanel() {
       setProcessingUserId(userId);
       
       // Delete user profile directly via Supabase (RLS handles security)
-      const { error } = await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase as any)
         .from('user_profiles')
         .delete()
         .eq('id', userId);
@@ -315,7 +320,8 @@ export function AdminPanel() {
       const profileLinks = selectedProfiles[userId] || [];
 
       // Delete existing links
-      await supabase
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase as any)
         .from('user_profile_links')
         .delete()
         .eq('user_id', userId);
@@ -332,9 +338,10 @@ export function AdminPanel() {
           permission: permission as 'read' | 'edit',
         }));
 
-        const { error: linksError } = await supabase
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: linksError } = await (supabase as any)
           .from('user_profile_links')
-          .insert(linksToInsert as never);
+          .insert(linksToInsert);
 
         if (linksError) {
           console.error('Error updating profile links:', linksError);
