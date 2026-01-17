@@ -170,10 +170,55 @@ export function Portfolio() {
           )}
         </div>
         
-        <div className="flex gap-2">
-          <Button variant={period === '30days' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('30days')}>30 Days</Button>
-          <Button variant={period === '3months' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('3months')}>3 Months</Button>
-          <Button variant={period === '1year' ? 'secondary' : 'outline'} size="sm" onClick={() => setPeriod('1year')}>1 Year</Button>
+        <div className="flex flex-wrap gap-2">
+          <Button 
+            variant={period === '30days' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('30days')}
+          >
+            <span className="hidden sm:inline">30 Days</span>
+            <span className="sm:hidden">30D</span>
+          </Button>
+          <Button 
+            variant={period === '3months' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('3months')}
+          >
+            <span className="hidden sm:inline">3 Months</span>
+            <span className="sm:hidden">3M</span>
+          </Button>
+          <Button 
+            variant={period === '1year' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('1year')}
+          >
+            <span className="hidden sm:inline">1 Year</span>
+            <span className="sm:hidden">1Y</span>
+          </Button>
+          <Button 
+            variant={period === '3years' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('3years')}
+          >
+            <span className="hidden sm:inline">3 Years</span>
+            <span className="sm:hidden">3Y</span>
+          </Button>
+          <Button 
+            variant={period === '5years' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('5years')}
+          >
+            <span className="hidden sm:inline">5 Years</span>
+            <span className="sm:hidden">5Y</span>
+          </Button>
+          <Button 
+            variant={period === '10years' ? 'secondary' : 'outline'} 
+            size="sm" 
+            onClick={() => setPeriod('10years')}
+          >
+            <span className="hidden sm:inline">10 Years</span>
+            <span className="sm:hidden">10Y</span>
+          </Button>
         </div>
       </div>
 
@@ -230,7 +275,14 @@ export function Portfolio() {
           <LazyAssetTrendChart 
             data={data.chartData}
             title="Asset Trends"
-            description={`Portfolio growth over ${period === '30days' ? '30 days' : period === '3months' ? '3 months' : '1 year'}`}
+            description={`Portfolio growth over ${
+              period === '30days' ? '30 days' : 
+              period === '3months' ? '3 months' : 
+              period === '1year' ? '1 year' :
+              period === '3years' ? '3 years' :
+              period === '5years' ? '5 years' :
+              '10 years'
+            }`}
             showRiskBreakdown={true}
           />
         </div>

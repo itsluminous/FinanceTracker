@@ -25,8 +25,21 @@ interface UserProfile {
 export function UserNav() {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const router = useRouter();
   const { toast } = useToast();
+
+  useEffect(() => {
+    // Check if mobile view
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 768); // md breakpoint
+    };
+    
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     const loadUserProfile = async () => {
@@ -70,6 +83,8 @@ export function UserNav() {
     return null;
   }
 
+  const canEditProfiles = userProfile.role === 'admin' || userProfile.role === 'approved';
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -93,6 +108,15 @@ export function UserNav() {
           <>
             <DropdownMenuItem onClick={() => router.push('/admin')}>
               Admin Panel
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+          </>
+        )}
+        {/* Show Profiles menu item only on mobile */}
+        {isMobile && canEditProfiles && (
+          <>
+            <DropdownMenuItem onClick={() => router.push('/profiles')}>
+              Profiles
             </DropdownMenuItem>
             <DropdownMenuSeparator />
           </>

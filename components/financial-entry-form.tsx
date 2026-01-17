@@ -5,10 +5,11 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
+import { Calendar } from './ui/calendar';
 import { HighMediumRiskAssets, LowRiskAssets } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, CalendarIcon } from 'lucide-react';
 import { FinancialEntryFormSkeleton } from './loading-skeletons';
 import { clearAllCache } from '@/lib/cache';
 
@@ -46,7 +47,10 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLatest, setIsLoadingLatest] = useState(true);
+  const [isLoadingByDate, setIsLoadingByDate] = useState(false);
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [entryDates, setEntryDates] = useState<string[]>([]);
+  const [showCalendar, setShowCalendar] = useState(false);
   
   // Collapsible sections state for mobile
   const [highMediumRiskExpanded, setHighMediumRiskExpanded] = useState(true);
@@ -54,6 +58,15 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
 
   // Draft saving key
   const draftKey = `financial-entry-draft-${profileId}`;
+
+  // Helper function to format date as dd/mm/yyyy
+  const formatDate = (dateString: string): string => {
+    const date = new Date(dateString + 'T00:00:00');
+    const day = String(date.getDate()).padStart(2, '0');
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const year = date.getFullYear();
+    return `${day}/${month}/${year}`;
+  };
 
   // Load draft from local storage on mount
   useEffect(() => {
@@ -157,8 +170,148 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
     }
   };
 
+  // Fetch entry by specific date
+  const fetchEntryByDate = async (date: string) => {
+    try {
+      setIsLoadingByDate(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      // First try to get entry for the exact date
+      const response = await fetch(`/api/profiles/${profileId}/entries/by-date?date=${date}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.entry) {
+          // Pre-fill with entry data for the selected date
+          setHighMediumRisk({
+            direct_equity: data.entry.direct_equity || 0,
+            esops: data.entry.esops || 0,
+            equity_pms: data.entry.equity_pms || 0,
+            ulip: data.entry.ulip || 0,
+            real_estate: data.entry.real_estate || 0,
+            real_estate_funds: data.entry.real_estate_funds || 0,
+            private_equity: data.entry.private_equity || 0,
+            equity_mutual_funds: data.entry.equity_mutual_funds || 0,
+            structured_products_equity: data.entry.structured_products_equity || 0,
+          });
+          setLowRisk({
+            bank_balance: data.entry.bank_balance || 0,
+            debt_mutual_funds: data.entry.debt_mutual_funds || 0,
+            endowment_plans: data.entry.endowment_plans || 0,
+            fixed_deposits: data.entry.fixed_deposits || 0,
+            nps: data.entry.nps || 0,
+            epf: data.entry.epf || 0,
+            ppf: data.entry.ppf || 0,
+            structured_products_debt: data.entry.structured_products_debt || 0,
+            gold_etfs_funds: data.entry.gold_etfs_funds || 0,
+          });
+          
+          toast({
+            title: 'Entry Loaded',
+            description: `Loaded existing entry for ${formatDate(date)}`,
+          });
+          return;
+        }
+      }
+
+      // If no entry found for exact date, try to get the last entry before this date
+      const beforeResponse = await fetch(`/api/profiles/${profileId}/entries/before-date?date=${date}`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (beforeResponse.ok) {
+        const beforeData = await beforeResponse.json();
+        if (beforeData.entry) {
+          // Pre-fill with the last available entry before this date
+          setHighMediumRisk({
+            direct_equity: beforeData.entry.direct_equity || 0,
+            esops: beforeData.entry.esops || 0,
+            equity_pms: beforeData.entry.equity_pms || 0,
+            ulip: beforeData.entry.ulip || 0,
+            real_estate: beforeData.entry.real_estate || 0,
+            real_estate_funds: beforeData.entry.real_estate_funds || 0,
+            private_equity: beforeData.entry.private_equity || 0,
+            equity_mutual_funds: beforeData.entry.equity_mutual_funds || 0,
+            structured_products_equity: beforeData.entry.structured_products_equity || 0,
+          });
+          setLowRisk({
+            bank_balance: beforeData.entry.bank_balance || 0,
+            debt_mutual_funds: beforeData.entry.debt_mutual_funds || 0,
+            endowment_plans: beforeData.entry.endowment_plans || 0,
+            fixed_deposits: beforeData.entry.fixed_deposits || 0,
+            nps: beforeData.entry.nps || 0,
+            epf: beforeData.entry.epf || 0,
+            ppf: beforeData.entry.ppf || 0,
+            structured_products_debt: beforeData.entry.structured_products_debt || 0,
+            gold_etfs_funds: beforeData.entry.gold_etfs_funds || 0,
+          });
+          
+          const lastEntryDate = formatDate(beforeData.entry.entry_date);
+          toast({
+            title: 'Previous Entry Loaded',
+            description: `No entry found for ${formatDate(date)}. Loaded data from ${lastEntryDate}.`,
+          });
+          return;
+        }
+      }
+
+      // If no previous entry found either, use latest entry as fallback
+      await fetchLatestEntry();
+      toast({
+        title: 'No Previous Entry Found',
+        description: `No entries found before ${formatDate(date)}. Using latest entry as template.`,
+      });
+    } catch (error) {
+      console.error('Error fetching entry by date:', error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load entry for selected date',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsLoadingByDate(false);
+    }
+  };
+
+  // Fetch all entry dates for calendar highlighting
+  const fetchEntryDates = async () => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        console.error('No session found');
+        return;
+      }
+
+      const response = await fetch(`/api/profiles/${profileId}/entries/dates`, {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        setEntryDates(data.dates || []);
+      }
+    } catch (error) {
+      console.error('Error fetching entry dates:', error);
+    }
+  };
+
   useEffect(() => {
     fetchLatestEntry();
+    fetchEntryDates();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [profileId]);
 
@@ -200,6 +353,18 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
     // Validate entry date
     if (!entryDate) {
       errors.entry_date = 'Entry date is required';
+    } else {
+      // Validate date format (YYYY-MM-DD)
+      const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
+      if (!dateRegex.test(entryDate)) {
+        errors.entry_date = 'Date must be in YYYY-MM-DD format';
+      } else {
+        // Validate that it's a valid date
+        const date = new Date(entryDate);
+        if (isNaN(date.getTime()) || date.toISOString().split('T')[0] !== entryDate) {
+          errors.entry_date = 'Please enter a valid date';
+        }
+      }
     }
     
     // Validate decimal precision for all fields
@@ -285,6 +450,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
 
       // Clear all analytics cache to force refresh
       clearAllCache();
+
+      // Refresh entry dates for calendar highlighting
+      await fetchEntryDates();
 
       toast({
         title: 'Success',
@@ -379,25 +547,88 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             <Label htmlFor="entry_date" className={validationErrors.entry_date ? 'text-red-500' : ''}>
               Entry Date {validationErrors.entry_date && '*'}
             </Label>
-            <Input
-              id="entry_date"
-              type="date"
-              value={entryDate}
-              onChange={(e) => {
-                setEntryDate(e.target.value);
-                if (validationErrors.entry_date) {
-                  setValidationErrors((prev) => {
-                    const newErrors = { ...prev };
-                    delete newErrors.entry_date;
-                    return newErrors;
-                  });
-                }
-              }}
-              required
-              className={`w-full ${validationErrors.entry_date ? 'border-red-500' : ''}`}
-            />
+            <div className="flex gap-2">
+              <Input
+                id="entry_date"
+                type="text"
+                value={entryDate ? formatDate(entryDate) : ''}
+                onChange={(e) => {
+                  const displayValue = e.target.value;
+                  // Try to parse dd/mm/yyyy format
+                  const ddmmyyyyRegex = /^(\d{2})\/(\d{2})\/(\d{4})$/;
+                  const match = displayValue.match(ddmmyyyyRegex);
+                  
+                  if (match) {
+                    const [, day, month, year] = match;
+                    const newDate = `${year}-${month}-${day}`;
+                    setEntryDate(newDate);
+                    if (validationErrors.entry_date) {
+                      setValidationErrors((prev) => {
+                        const newErrors = { ...prev };
+                        delete newErrors.entry_date;
+                        return newErrors;
+                      });
+                    }
+                    // Fetch entry for the selected date
+                    fetchEntryByDate(newDate);
+                  } else if (displayValue === '') {
+                    setEntryDate('');
+                  }
+                }}
+                placeholder="DD/MM/YYYY"
+                required
+                className={`flex-1 ${validationErrors.entry_date ? 'border-red-500' : ''}`}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="icon"
+                onClick={() => setShowCalendar(!showCalendar)}
+                className="shrink-0"
+                aria-label="Open calendar"
+              >
+                <CalendarIcon className="h-4 w-4" />
+              </Button>
+            </div>
             {validationErrors.entry_date && (
               <p className="text-sm text-red-500">{validationErrors.entry_date}</p>
+            )}
+            
+            {/* Calendar */}
+            {showCalendar && (
+              <div className="border rounded-lg p-2 bg-background">
+                <Calendar
+                  mode="single"
+                  selected={entryDate ? new Date(entryDate + 'T00:00:00') : undefined}
+                  onSelect={(date: Date | undefined) => {
+                    if (date) {
+                      // Format date as YYYY-MM-DD in local timezone
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, '0');
+                      const day = String(date.getDate()).padStart(2, '0');
+                      const dateString = `${year}-${month}-${day}`;
+                      setEntryDate(dateString);
+                      fetchEntryByDate(dateString);
+                      setShowCalendar(false);
+                    }
+                  }}
+                  modifiers={{
+                    hasEntry: entryDates.map(date => new Date(date + 'T00:00:00'))
+                  }}
+                  modifiersClassNames={{
+                    hasEntry: "bg-green-100 text-green-800 hover:bg-green-200 dark:bg-green-900 dark:text-green-100 dark:hover:bg-green-800"
+                  }}
+                  className="w-full"
+                />
+                <div className="flex items-center gap-2 mt-2 text-xs text-muted-foreground">
+                  <div className="w-3 h-3 bg-green-100 dark:bg-green-900 rounded border"></div>
+                  <span>Dates with existing entries</span>
+                </div>
+              </div>
+            )}
+            
+            {isLoadingByDate && (
+              <p className="text-sm text-muted-foreground">Loading entry for selected date...</p>
             )}
           </div>
 

@@ -226,4 +226,171 @@ describe('UserNav Component', () => {
 
     expect(container.firstChild).toBeNull();
   });
+
+  it('should show Profiles menu item on mobile for approved users', async () => {
+    const user = userEvent.setup();
+    
+    // Mock window.innerWidth to simulate mobile
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 500, // Mobile width
+    });
+
+    vi.spyOn(supabaseModule, 'getCurrentUser').mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+    } as unknown as Awaited<ReturnType<typeof supabaseModule.getCurrentUser>>);
+
+    vi.spyOn(supabaseModule, 'getUserProfile').mockResolvedValue({
+      data: {
+        id: 'user-1',
+        email: 'user@example.com',
+        role: 'approved',
+      },
+      error: null,
+    } as Awaited<ReturnType<typeof supabaseModule.getUserProfile>>);
+
+    render(<UserNav />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    // Trigger resize event to update isMobile state
+    window.dispatchEvent(new Event('resize'));
+
+    await user.click(screen.getByRole('button'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Profiles')).toBeInTheDocument();
+    });
+  });
+
+  it('should show Profiles menu item on mobile for admin users', async () => {
+    const user = userEvent.setup();
+    
+    // Mock window.innerWidth to simulate mobile
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 500, // Mobile width
+    });
+
+    vi.spyOn(supabaseModule, 'getCurrentUser').mockResolvedValue({
+      id: 'admin-1',
+      email: 'admin@example.com',
+    } as unknown as Awaited<ReturnType<typeof supabaseModule.getCurrentUser>>);
+
+    vi.spyOn(supabaseModule, 'getUserProfile').mockResolvedValue({
+      data: {
+        id: 'admin-1',
+        email: 'admin@example.com',
+        role: 'admin',
+      },
+      error: null,
+    } as Awaited<ReturnType<typeof supabaseModule.getUserProfile>>);
+
+    render(<UserNav />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    // Trigger resize event to update isMobile state
+    window.dispatchEvent(new Event('resize'));
+
+    await user.click(screen.getByRole('button'));
+
+    await waitFor(() => {
+      expect(screen.getByText('Profiles')).toBeInTheDocument();
+    });
+  });
+
+  it('should not show Profiles menu item on desktop', async () => {
+    const user = userEvent.setup();
+    
+    // Mock window.innerWidth to simulate desktop
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 1024, // Desktop width
+    });
+
+    vi.spyOn(supabaseModule, 'getCurrentUser').mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+    } as unknown as Awaited<ReturnType<typeof supabaseModule.getCurrentUser>>);
+
+    vi.spyOn(supabaseModule, 'getUserProfile').mockResolvedValue({
+      data: {
+        id: 'user-1',
+        email: 'user@example.com',
+        role: 'approved',
+      },
+      error: null,
+    } as Awaited<ReturnType<typeof supabaseModule.getUserProfile>>);
+
+    render(<UserNav />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    // Trigger resize event to update isMobile state
+    window.dispatchEvent(new Event('resize'));
+
+    await user.click(screen.getByRole('button'));
+
+    await waitFor(() => {
+      // Should not show Profiles on desktop (it's in the main nav instead)
+      expect(screen.queryByText('Profiles')).not.toBeInTheDocument();
+    });
+  });
+
+  it('should navigate to profiles page when Profiles menu item is clicked on mobile', async () => {
+    const user = userEvent.setup();
+    
+    // Mock window.innerWidth to simulate mobile
+    Object.defineProperty(window, 'innerWidth', {
+      writable: true,
+      configurable: true,
+      value: 500, // Mobile width
+    });
+
+    vi.spyOn(supabaseModule, 'getCurrentUser').mockResolvedValue({
+      id: 'user-1',
+      email: 'user@example.com',
+    } as unknown as Awaited<ReturnType<typeof supabaseModule.getCurrentUser>>);
+
+    vi.spyOn(supabaseModule, 'getUserProfile').mockResolvedValue({
+      data: {
+        id: 'user-1',
+        email: 'user@example.com',
+        role: 'approved',
+      },
+      error: null,
+    } as Awaited<ReturnType<typeof supabaseModule.getUserProfile>>);
+
+    render(<UserNav />);
+
+    await waitFor(() => {
+      expect(screen.getByRole('button')).toBeInTheDocument();
+    });
+
+    // Trigger resize event to update isMobile state
+    window.dispatchEvent(new Event('resize'));
+
+    await user.click(screen.getByRole('button'));
+    
+    await waitFor(() => {
+      expect(screen.getByText('Profiles')).toBeInTheDocument();
+    });
+
+    await user.click(screen.getByText('Profiles'));
+
+    await waitFor(() => {
+      expect(mockPush).toHaveBeenCalledWith('/profiles');
+    });
+  });
 });

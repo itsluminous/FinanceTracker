@@ -1,6 +1,6 @@
 import { FinancialEntry, ChartDataPoint, RiskDistribution } from './types';
 
-export type TimePeriod = '30days' | '3months' | '1year';
+export type TimePeriod = '30days' | '3months' | '1year' | '3years' | '5years' | '10years';
 
 /**
  * Calculate the start date for a given time period
@@ -18,6 +18,15 @@ export function getStartDateForPeriod(period: TimePeriod): Date {
       break;
     case '1year':
       startDate.setFullYear(now.getFullYear() - 1);
+      break;
+    case '3years':
+      startDate.setFullYear(now.getFullYear() - 3);
+      break;
+    case '5years':
+      startDate.setFullYear(now.getFullYear() - 5);
+      break;
+    case '10years':
+      startDate.setFullYear(now.getFullYear() - 10);
       break;
   }
   

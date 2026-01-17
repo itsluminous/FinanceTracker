@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { UserNav } from '@/components/user-nav';
 import { ProfileSelector } from '@/components/profile-selector';
 import { ProfileDialog } from '@/components/profile-dialog';
-import { Menu, X } from 'lucide-react';
 import { ThemeToggle } from '@/components/theme-toggle';
 
 interface UserProfile {
@@ -26,7 +25,6 @@ interface MainNavProps {
 export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelect }: MainNavProps) {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showProfileDialog, setShowProfileDialog] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
@@ -63,10 +61,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center gap-2">
               <span className="text-2xl">💰</span>
-              <h1 className="text-xl font-bold text-foreground">
-                <span className="hidden sm:inline">Finance Tracker</span>
-                <span className="sm:hidden">Finance</span>
-              </h1>
+              <h1 className="text-xl font-bold text-foreground">Finance Tracker</h1>
             </div>
           </div>
         </div>
@@ -86,8 +81,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
                 className="flex items-center gap-2 text-xl font-bold text-foreground hover:text-primary transition-colors"
               >
                 <span className="text-2xl">💰</span>
-                <span className="hidden sm:inline">Finance Tracker</span>
-                <span className="sm:hidden">Finance</span>
+                <span>Finance Tracker</span>
               </button>
             </div>
 
@@ -107,17 +101,10 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
               </div>
             </div>
 
-            {/* Mobile Menu Button */}
+            {/* Mobile Menu Button - Removed, Profiles now in user menu */}
             <div className="md:hidden flex items-center gap-2">
               <ThemeToggle />
               <UserNav />
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </Button>
             </div>
           </div>
 
@@ -149,26 +136,6 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
             </div>
           )}
         </div>
-
-        {/* Mobile Menu */}
-        {mobileMenuOpen && (
-          <div className="md:hidden border-t border-border bg-card">
-            <div className="px-4 py-3 space-y-2">
-              {canEditProfiles && (
-                <Button
-                  variant={isActive('/profiles') ? 'secondary' : 'outline'}
-                  onClick={() => {
-                    router.push('/profiles');
-                    setMobileMenuOpen(false);
-                  }}
-                  className="w-full justify-start"
-                >
-                  Profiles
-                </Button>
-              )}
-            </div>
-          </div>
-        )}
       </nav>
 
       {/* Profile Dialog */}
