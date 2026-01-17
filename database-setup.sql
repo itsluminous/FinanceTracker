@@ -86,7 +86,10 @@ CREATE TABLE IF NOT EXISTS financial_entries (
   
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_by UUID REFERENCES auth.users(id) NOT NULL
+  created_by UUID REFERENCES auth.users(id) NOT NULL,
+  
+  -- Ensure only one entry per profile per date
+  CONSTRAINT unique_profile_entry_date UNIQUE (profile_id, entry_date)
 );
 
 -- ============================================================================
@@ -344,6 +347,7 @@ COMMENT ON TABLE user_profiles IS 'Extends auth.users with role and approval sta
 COMMENT ON TABLE profiles IS 'Financial profiles that can exist independently';
 COMMENT ON TABLE user_profile_links IS 'Many-to-many relationship between users and profiles with permissions';
 COMMENT ON TABLE financial_entries IS 'Timestamped financial data entries for profiles';
+COMMENT ON CONSTRAINT unique_profile_entry_date ON financial_entries IS 'Ensures only one financial entry per profile per date';
 
 COMMENT ON FUNCTION is_admin(UUID) IS 'Check if a user has admin role';
 COMMENT ON FUNCTION has_edit_permission(UUID, UUID) IS 'Check if a user has edit permission for a profile';

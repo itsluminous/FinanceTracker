@@ -6,10 +6,11 @@ import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Calendar } from './ui/calendar';
-import { HighMediumRiskAssets, LowRiskAssets } from '@/lib/types';
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from './ui/dialog';
+import { HighMediumRiskAssets, LowRiskAssets, FinancialEntry } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/lib/supabase';
-import { ChevronDown, ChevronUp, CalendarIcon } from 'lucide-react';
+import { ChevronDown, ChevronUp, CalendarIcon, Trash2 } from 'lucide-react';
 import { FinancialEntryFormSkeleton } from './loading-skeletons';
 import { clearAllCache } from '@/lib/cache';
 
@@ -51,6 +52,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
   const [entryDates, setEntryDates] = useState<string[]>([]);
   const [showCalendar, setShowCalendar] = useState(false);
+  const [existingEntry, setExistingEntry] = useState<FinancialEntry | null>(null);
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   
   // Collapsible sections state for mobile
   const [highMediumRiskExpanded, setHighMediumRiskExpanded] = useState(true);
@@ -191,6 +195,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
       if (response.ok) {
         const data = await response.json();
         if (data.entry) {
+          // Store the existing entry for edit mode
+          setExistingEntry(data.entry);
+          
           // Pre-fill with entry data for the selected date
           setHighMediumRisk({
             direct_equity: data.entry.direct_equity || 0,
@@ -220,6 +227,9 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             description: `Loaded existing entry for ${formatDate(date)}`,
           });
           return;
+        } else {
+          // No entry found for this date, clear existing entry state
+          setExistingEntry(null);
         }
       }
 
@@ -413,18 +423,40 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
         throw new Error('You must be logged in to save an entry');
       }
 
-      const response = await fetch(`/api/profiles/${profileId}/entries`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          entry_date: entryDate,
-          high_medium_risk: highMediumRisk,
-          low_risk: lowRisk,
-        }),
-      });
+      let response;
+      let successMessage;
+
+      if (existingEntry) {
+        // Update existing entry
+        response = await fetch(`/api/entries/${existingEntry.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            entry_date: entryDate,
+            high_medium_risk: highMediumRisk,
+            low_risk: lowRisk,
+          }),
+        });
+        successMessage = 'Financial entry updated successfully';
+      } else {
+        // Create new entry
+        response = await fetch(`/api/profiles/${profileId}/entries`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            entry_date: entryDate,
+            high_medium_risk: highMediumRisk,
+            low_risk: lowRisk,
+          }),
+        });
+        successMessage = 'Financial entry saved successfully';
+      }
 
       if (!response.ok) {
         const error = await response.json();
@@ -456,7 +488,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
 
       toast({
         title: 'Success',
-        description: 'Financial entry saved successfully',
+        description: successMessage,
       });
 
       // Refetch latest entry to update form with saved data
@@ -484,6 +516,90 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
       }
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!existingEntry) return;
+    
+    setIsDeleting(true);
+
+    try {
+      // Get the current session to get the access token
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        throw new Error('You must be logged in to delete an entry');
+      }
+
+      const response = await fetch(`/api/entries/${existingEntry.id}`, {
+        method: 'DELETE',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        
+        // Handle specific error cases
+        if (response.status === 403) {
+          throw new Error('You do not have permission to delete this entry');
+        } else if (response.status === 404) {
+          throw new Error('Entry not found');
+        }
+        
+        throw new Error(error.error || 'Failed to delete entry');
+      }
+
+      // Clear the existing entry state
+      setExistingEntry(null);
+
+      // Clear draft on successful delete
+      try {
+        localStorage.removeItem(draftKey);
+      } catch (error) {
+        console.error('Error clearing draft:', error);
+      }
+
+      // Clear all analytics cache to force refresh
+      clearAllCache();
+
+      // Refresh entry dates for calendar highlighting
+      await fetchEntryDates();
+
+      // Reset form to latest entry
+      await fetchLatestEntry();
+
+      toast({
+        title: 'Success',
+        description: 'Financial entry deleted successfully',
+      });
+
+      setShowDeleteDialog(false);
+
+      if (onSuccess) {
+        onSuccess();
+      }
+    } catch (error) {
+      console.error('Error deleting entry:', error);
+      
+      // Handle network errors
+      if (error instanceof TypeError && error.message.includes('fetch')) {
+        toast({
+          title: 'Network Error',
+          description: 'Unable to delete entry. Please check your connection and try again.',
+          variant: 'destructive',
+        });
+      } else {
+        toast({
+          title: 'Error',
+          description: error instanceof Error ? error.message : 'Failed to delete entry',
+          variant: 'destructive',
+        });
+      }
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -539,7 +655,14 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
     <form onSubmit={handleSubmit}>
       <Card>
         <CardHeader>
-          <CardTitle>Financial Entry</CardTitle>
+          <CardTitle>
+            {existingEntry ? 'Edit Financial Entry' : 'Financial Entry'}
+            {existingEntry && entryDate && (
+              <span className="text-sm font-normal text-muted-foreground ml-2">
+                for {formatDate(entryDate)}
+              </span>
+            )}
+          </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Date Picker */}
@@ -573,6 +696,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
                     fetchEntryByDate(newDate);
                   } else if (displayValue === '') {
                     setEntryDate('');
+                    setExistingEntry(null); // Clear existing entry when date is cleared
                   }
                 }}
                 placeholder="DD/MM/YYYY"
@@ -600,6 +724,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
                 <Calendar
                   mode="single"
                   selected={entryDate ? new Date(entryDate + 'T00:00:00') : undefined}
+                  defaultMonth={entryDate ? new Date(entryDate + 'T00:00:00') : new Date()}
                   onSelect={(date: Date | undefined) => {
                     if (date) {
                       // Format date as YYYY-MM-DD in local timezone
@@ -610,6 +735,8 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
                       setEntryDate(dateString);
                       fetchEntryByDate(dateString);
                       setShowCalendar(false);
+                    } else {
+                      setExistingEntry(null); // Clear existing entry when date is cleared
                     }
                   }}
                   modifiers={{
@@ -774,12 +901,72 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             </div>
           </div>
 
-          {/* Submit Button */}
-          <Button type="submit" variant="secondary" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Saving...' : 'Save Entry'}
-          </Button>
+          {/* Submit Buttons */}
+          {existingEntry ? (
+            <div className="flex gap-2">
+              <Button 
+                type="submit" 
+                variant="secondary" 
+                className="flex-1" 
+                disabled={isLoading}
+              >
+                {isLoading ? 'Updating...' : 'Update Entry'}
+              </Button>
+              <Button 
+                type="button" 
+                variant="destructive" 
+                onClick={() => setShowDeleteDialog(true)}
+                disabled={isLoading}
+                className="flex items-center gap-2"
+              >
+                <Trash2 className="h-4 w-4" />
+                Delete Entry
+              </Button>
+            </div>
+          ) : (
+            <Button type="submit" variant="secondary" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Saving...' : 'Save Entry'}
+            </Button>
+          )}
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Entry</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete the financial entry for {entryDate ? formatDate(entryDate) : 'this date'}? 
+              This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowDeleteDialog(false)}
+              disabled={isDeleting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDelete}
+              disabled={isDeleting}
+              className="flex items-center gap-2"
+            >
+              {isDeleting ? (
+                'Deleting...'
+              ) : (
+                <>
+                  <Trash2 className="h-4 w-4" />
+                  Delete Entry
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </form>
   );
 }

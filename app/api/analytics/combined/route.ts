@@ -47,7 +47,7 @@ export async function GET(request: NextRequest) {
     const profileIdsParam = searchParams.get('profileIds');
     
     // Validate period
-    if (!['30days', '3months', '1year'].includes(period)) {
+    if (!['30days', '3months', '1year', '3years', '5years', '10years'].includes(period)) {
       return NextResponse.json(
         { error: 'Invalid time period' },
         { status: 400 }

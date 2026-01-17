@@ -91,16 +91,28 @@ export function Portfolio() {
           headers: { Authorization: `Bearer ${session.access_token}` },
         });
         
-        if (!response.ok) throw new Error('Failed to fetch analytics data');
-        
         const analyticsData = await response.json();
+        
+        // Handle case where API returns an error message
+        if (!response.ok) {
+          throw new Error(analyticsData.error || 'Failed to fetch analytics data');
+        }
+        
         setData(analyticsData);
         
         // Cache the data for 5 minutes
         setCache(cacheKey, analyticsData, 5 * 60 * 1000);
       } catch (err) {
         console.error('Error fetching analytics:', err);
-        setError('Failed to load portfolio data. Please try again.');
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error occurred';
+        
+        if (errorMessage.includes('Invalid time period')) {
+          setError(`The selected time period (${period}) is not supported. Please try a shorter period.`);
+        } else if (errorMessage.includes('No financial data available')) {
+          setError(`No financial data available for the selected ${period} period. Try selecting a shorter time period or add more historical data.`);
+        } else {
+          setError('Failed to load portfolio data. Please try again.');
+        }
       } finally {
         setLoading(false);
       }
@@ -108,6 +120,10 @@ export function Portfolio() {
 
     if (selectedProfiles.size > 0) {
       fetchAnalytics();
+    } else {
+      // Clear data when no profiles are selected
+      setData(null);
+      setLoading(false);
     }
   }, [period, selectedProfiles]);
 
@@ -247,7 +263,45 @@ export function Portfolio() {
         </Card>
       )}
 
-      {hasData && data && (
+      {profiles.length > 0 && selectedProfiles.size === 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle>No Profiles Selected</CardTitle>
+            <CardDescription>Please select at least one profile to view portfolio data</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-8">
+              <div className="mx-auto w-16 h-16 bg-muted rounded-full flex items-center justify-center mb-4">
+                <svg
+                  className="w-8 h-8 text-muted-foreground"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              </div>
+              <p className="text-muted-foreground mb-4">
+                Select one or more profiles above to view your portfolio analytics and charts.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedProfiles(new Set(profiles.map(p => p.id)))}
+              >
+                Select All Profiles
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {hasData && data && selectedProfiles.size > 0 && (
         <Card>
           <CardHeader>
             <CardTitle>Total Portfolio Value</CardTitle>
@@ -259,13 +313,13 @@ export function Portfolio() {
         </Card>
       )}
 
-      {data?.message && (
+      {data?.message && selectedProfiles.size > 0 && (
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
           <p className="text-sm text-yellow-800">{data.message}</p>
         </div>
       )}
 
-      {hasData && data ? (
+      {hasData && data && selectedProfiles.size > 0 && (
         <div className="grid gap-6 lg:grid-cols-2">
           <LazyRiskDistributionChart 
             data={data.riskDistribution}
@@ -286,7 +340,9 @@ export function Portfolio() {
             showRiskBreakdown={true}
           />
         </div>
-      ) : (
+      )}
+
+      {profiles.length === 0 && (
         <Card className="w-full max-w-2xl mx-auto">
           <CardHeader>
             <CardTitle>Personal Finance Tracker</CardTitle>

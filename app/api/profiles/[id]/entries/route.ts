@@ -191,6 +191,21 @@ export async function POST(
       );
     }
 
+    // Check if an entry already exists for this date
+    const { data: existingEntry } = await supabase
+      .from('financial_entries')
+      .select('id')
+      .eq('profile_id', profileId)
+      .eq('entry_date', entry_date)
+      .single();
+
+    if (existingEntry) {
+      return NextResponse.json(
+        { error: 'An entry for this date already exists. Please use the update function instead.' },
+        { status: 409 }
+      );
+    }
+
     // Create the entry
     const { data: entry, error } = await supabase
       .from('financial_entries')
