@@ -19,3 +19,11 @@ export const LazyAssetTrendChart = dynamic(
     ssr: false,
   }
 );
+
+export const LazyIndividualAssetChart = dynamic(
+  () => import('./individual-asset-chart').then(mod => ({ default: mod.IndividualAssetChart })),
+  {
+    loading: () => <ChartSkeleton />,
+    ssr: false,
+  }
+);

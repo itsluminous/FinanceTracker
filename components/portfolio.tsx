@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { LazyRiskDistributionChart, LazyAssetTrendChart } from './lazy-charts';
+import { LazyRiskDistributionChart, LazyAssetTrendChart, LazyIndividualAssetChart } from './lazy-charts';
 import { Button } from './ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
 import { Checkbox } from './ui/checkbox';
@@ -320,16 +320,32 @@ export function Portfolio() {
       )}
 
       {hasData && data && selectedProfiles.size > 0 && (
-        <div className="grid gap-6 lg:grid-cols-2">
-          <LazyRiskDistributionChart 
-            data={data.riskDistribution}
-            title="Risk Distribution"
-            description="Asset allocation across selected profiles"
-          />
-          <LazyAssetTrendChart 
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-2">
+            <LazyRiskDistributionChart 
+              data={data.riskDistribution}
+              title="Risk Distribution"
+              description="Asset allocation across selected profiles"
+            />
+            <LazyAssetTrendChart 
+              data={data.chartData}
+              title="Asset Trends"
+              description={`Portfolio growth over ${
+                period === '30days' ? '30 days' : 
+                period === '3months' ? '3 months' : 
+                period === '1year' ? '1 year' :
+                period === '3years' ? '3 years' :
+                period === '5years' ? '5 years' :
+                '10 years'
+              }`}
+              showRiskBreakdown={true}
+            />
+          </div>
+          
+          <LazyIndividualAssetChart 
             data={data.chartData}
-            title="Asset Trends"
-            description={`Portfolio growth over ${
+            title="Individual Asset Growth"
+            description={`Growth trends for each asset category over ${
               period === '30days' ? '30 days' : 
               period === '3months' ? '3 months' : 
               period === '1year' ? '1 year' :
@@ -337,7 +353,6 @@ export function Portfolio() {
               period === '5years' ? '5 years' :
               '10 years'
             }`}
-            showRiskBreakdown={true}
           />
         </div>
       )}

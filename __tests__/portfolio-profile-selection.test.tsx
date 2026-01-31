@@ -22,6 +22,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@/components/lazy-charts', () => ({
   LazyRiskDistributionChart: ({ title }: { title: string }) => <div data-testid="risk-chart">{title}</div>,
   LazyAssetTrendChart: ({ title }: { title: string }) => <div data-testid="trend-chart">{title}</div>,
+  LazyIndividualAssetChart: ({ title }: { title: string }) => <div data-testid="individual-asset-chart">{title}</div>,
 }));
 
 const mockGetSession = vi.mocked(await import('@/lib/supabase')).getSession;

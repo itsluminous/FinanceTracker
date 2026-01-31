@@ -65,7 +65,26 @@ export function transformToChartData(entries: FinancialEntry[]): ChartDataPoint[
     }),
     total_assets: entry.total_assets,
     high_medium_risk: entry.total_high_medium_risk,
-    low_risk: entry.total_low_risk
+    low_risk: entry.total_low_risk,
+    // Individual asset fields
+    direct_equity: entry.high_medium_risk.direct_equity,
+    esops: entry.high_medium_risk.esops,
+    equity_pms: entry.high_medium_risk.equity_pms,
+    ulip: entry.high_medium_risk.ulip,
+    real_estate: entry.high_medium_risk.real_estate,
+    real_estate_funds: entry.high_medium_risk.real_estate_funds,
+    private_equity: entry.high_medium_risk.private_equity,
+    equity_mutual_funds: entry.high_medium_risk.equity_mutual_funds,
+    structured_products_equity: entry.high_medium_risk.structured_products_equity,
+    bank_balance: entry.low_risk.bank_balance,
+    debt_mutual_funds: entry.low_risk.debt_mutual_funds,
+    endowment_plans: entry.low_risk.endowment_plans,
+    fixed_deposits: entry.low_risk.fixed_deposits,
+    nps: entry.low_risk.nps,
+    epf: entry.low_risk.epf,
+    ppf: entry.low_risk.ppf,
+    structured_products_debt: entry.low_risk.structured_products_debt,
+    gold_etfs_funds: entry.low_risk.gold_etfs_funds
   }));
 }
 
@@ -160,7 +179,30 @@ export function aggregateCombinedPortfolio(
     ] : [];
   
   // Aggregate chart data by date
-  const dateMap = new Map<string, { high_medium_risk: number; low_risk: number; total_assets: number }>();
+  const dateMap = new Map<string, { 
+    high_medium_risk: number; 
+    low_risk: number; 
+    total_assets: number;
+    // Individual asset fields
+    direct_equity: number;
+    esops: number;
+    equity_pms: number;
+    ulip: number;
+    real_estate: number;
+    real_estate_funds: number;
+    private_equity: number;
+    equity_mutual_funds: number;
+    structured_products_equity: number;
+    bank_balance: number;
+    debt_mutual_funds: number;
+    endowment_plans: number;
+    fixed_deposits: number;
+    nps: number;
+    epf: number;
+    ppf: number;
+    structured_products_debt: number;
+    gold_etfs_funds: number;
+  }>();
   
   profileEntries.forEach(entries => {
     entries.forEach(entry => {
@@ -171,12 +213,54 @@ export function aggregateCombinedPortfolio(
       }
       
       const dateKey = date.toISOString().split('T')[0];
-      const existing = dateMap.get(dateKey) || { high_medium_risk: 0, low_risk: 0, total_assets: 0 };
+      const existing = dateMap.get(dateKey) || { 
+        high_medium_risk: 0, 
+        low_risk: 0, 
+        total_assets: 0,
+        // Individual asset fields
+        direct_equity: 0,
+        esops: 0,
+        equity_pms: 0,
+        ulip: 0,
+        real_estate: 0,
+        real_estate_funds: 0,
+        private_equity: 0,
+        equity_mutual_funds: 0,
+        structured_products_equity: 0,
+        bank_balance: 0,
+        debt_mutual_funds: 0,
+        endowment_plans: 0,
+        fixed_deposits: 0,
+        nps: 0,
+        epf: 0,
+        ppf: 0,
+        structured_products_debt: 0,
+        gold_etfs_funds: 0
+      };
       
       dateMap.set(dateKey, {
         high_medium_risk: existing.high_medium_risk + entry.total_high_medium_risk,
         low_risk: existing.low_risk + entry.total_low_risk,
-        total_assets: existing.total_assets + entry.total_assets
+        total_assets: existing.total_assets + entry.total_assets,
+        // Individual asset fields
+        direct_equity: existing.direct_equity + entry.high_medium_risk.direct_equity,
+        esops: existing.esops + entry.high_medium_risk.esops,
+        equity_pms: existing.equity_pms + entry.high_medium_risk.equity_pms,
+        ulip: existing.ulip + entry.high_medium_risk.ulip,
+        real_estate: existing.real_estate + entry.high_medium_risk.real_estate,
+        real_estate_funds: existing.real_estate_funds + entry.high_medium_risk.real_estate_funds,
+        private_equity: existing.private_equity + entry.high_medium_risk.private_equity,
+        equity_mutual_funds: existing.equity_mutual_funds + entry.high_medium_risk.equity_mutual_funds,
+        structured_products_equity: existing.structured_products_equity + entry.high_medium_risk.structured_products_equity,
+        bank_balance: existing.bank_balance + entry.low_risk.bank_balance,
+        debt_mutual_funds: existing.debt_mutual_funds + entry.low_risk.debt_mutual_funds,
+        endowment_plans: existing.endowment_plans + entry.low_risk.endowment_plans,
+        fixed_deposits: existing.fixed_deposits + entry.low_risk.fixed_deposits,
+        nps: existing.nps + entry.low_risk.nps,
+        epf: existing.epf + entry.low_risk.epf,
+        ppf: existing.ppf + entry.low_risk.ppf,
+        structured_products_debt: existing.structured_products_debt + entry.low_risk.structured_products_debt,
+        gold_etfs_funds: existing.gold_etfs_funds + entry.low_risk.gold_etfs_funds
       });
     });
   });
