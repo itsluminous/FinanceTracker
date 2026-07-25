@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getCurrentUser, getUserProfile, supabase } from '@/lib/supabase';
 import { MainNav } from '@/components/main-nav';
 import { FinancialEntryForm } from '@/components/financial-entry-form';
+import { FinanceAssistantChat } from '@/components/finance-assistant-chat';
 import { Card, CardContent } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { PageLoadingSkeleton } from '@/components/loading-skeletons';
@@ -163,6 +164,19 @@ export default function ProfilesPage() {
           )}
         </div>
       </div>
+
+      {/* Finance Assistant Chat */}
+      {hasEditPermission && (
+        <FinanceAssistantChat
+          selectedProfileId={selectedProfileId}
+          onEntrySaved={(profileId, entryDate) => {
+            // Update selected profile if it matches
+            if (profileId !== selectedProfileId) {
+              setSelectedProfileId(profileId);
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
