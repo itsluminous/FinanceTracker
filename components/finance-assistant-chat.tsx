@@ -155,13 +155,13 @@ type ConversationStep =
   | 'saving'
   | 'done';
 
-// --- Helper Functions ---
+// --- Helper Functions (exported for testing) ---
 
 /**
  * Parse a user input that may contain Indian-style commas and arithmetic expressions
  * e.g., "12,89,502 + 8,64,670" => 2154172
  */
-function parseAmountExpression(input: string): number {
+export function parseAmountExpression(input: string): number {
   // Remove all commas (Indian or otherwise)
   const cleaned = input.replace(/,/g, '');
   
@@ -186,7 +186,7 @@ function parseAmountExpression(input: string): number {
 /**
  * Format number with Indian numbering system
  */
-function formatIndianNumber(num: number): string {
+export function formatIndianNumber(num: number): string {
   if (num === 0) return '0';
   const isNegative = num < 0;
   const absNum = Math.abs(num);

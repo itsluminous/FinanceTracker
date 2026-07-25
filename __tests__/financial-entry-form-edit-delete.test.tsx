@@ -266,11 +266,10 @@ describe('FinancialEntryForm Edit/Delete Functionality', () => {
 
     const dateInput = screen.getByLabelText(/entry date/i) as HTMLInputElement;
     
-    // Check that the date is displayed in dd/mm/yyyy format
-    const today = new Date();
-    const day = String(today.getDate()).padStart(2, '0');
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const year = today.getFullYear();
+    // The component initializes date via new Date().toISOString().split('T')[0]
+    // which gives a UTC date string, then formats it as dd/mm/yyyy
+    const isoDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD in UTC
+    const [year, month, day] = isoDate.split('-');
     const expectedFormat = `${day}/${month}/${year}`;
     
     expect(dateInput.value).toBe(expectedFormat);
