@@ -13,6 +13,7 @@ A responsive web application for tracking and visualizing financial assets acros
 - 👥 **Multi-User Access Control** - Admin approval workflow with read-only, edit, and admin roles
 - 📊 **Profile Management** - Track finances for multiple family members independently
 - 💰 **Financial Data Entry** - Comprehensive asset tracking across risk categories
+- 🤖 **Guided Chat Assistant** - Step-by-step data entry with auto-calculations and expression support
 - 📈 **Visual Analytics** - Interactive charts showing risk distribution and asset trends
 - 🎯 **Combined Portfolio View** - Aggregate view across all profiles
 - 📱 **Responsive Design** - Optimized for mobile, tablet, and desktop
@@ -236,6 +237,23 @@ personal-finance-tracker/
 - Decimal precision preservation (2 decimal places)
 - Pre-fill with most recent data
 - Historical record keeping
+
+### Guided Chat Assistant
+- Floating chat button on the Financial Entry page for quick, guided data entry
+- Step-by-step conversation flow:
+  1. Select profile → Pick date → Enter stock values → Mutual funds → Bank accounts → Other assets → Review & save
+- **Auto-calculations** — No manual math needed:
+  - Direct Equity = Total Stocks − Gold − Silver
+  - Gold ETFs/Funds = Gold + Silver
+  - Equity MF = Total MF − Arbitrage/Debt Funds
+  - Bank Balance & FDs = Sum across all banks
+- **Expression support** — Enter `12,89,502 + 8,64,670` and it computes automatically
+- **Indian-style commas** — Understands `₹13,67,986` format natively
+- **Smart validation** — Catches negative values, amounts exceeding totals, and invalid input with contextual error messages
+- **Bank loop** — Steps through common banks (HDFC, SBI, ICICI, Canara) and allows adding more
+- **Creates or updates** — Detects if an entry exists for the selected date and updates it
+- **Session persistence** — Conversation survives page reloads for 24 hours (stored in localStorage)
+- **Restart anytime** — Restart button in the header with confirmation to prevent accidental loss
 
 ### Analytics & Visualization
 - Risk distribution pie charts
