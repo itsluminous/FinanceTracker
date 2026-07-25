@@ -169,7 +169,7 @@ export default function ProfilesPage() {
       {hasEditPermission && (
         <FinanceAssistantChat
           selectedProfileId={selectedProfileId}
-          onEntrySaved={(profileId, entryDate) => {
+          onEntrySaved={(profileId) => {
             // Update selected profile if it matches
             if (profileId !== selectedProfileId) {
               setSelectedProfileId(profileId);

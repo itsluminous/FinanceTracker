@@ -216,6 +216,34 @@ function formatIndianNumber(num: number): string {
   return isNegative ? `-${formatted}` : formatted;
 }
 
+// --- Data Helpers ---
+
+function getEmptyData(): CollectedData {
+  return {
+    profileId: null,
+    profileName: null,
+    entryDate: null,
+    totalStocks: 0,
+    goldInStocks: 0,
+    silverInStocks: 0,
+    totalMutualFunds: 0,
+    arbitrageFunds: 0,
+    banks: [],
+    endowmentPlans: 0,
+    nps: 0,
+    epf: 0,
+    ppf: 0,
+    ulip: 0,
+    realEstate: 0,
+    realEstatesFunds: 0,
+    privateEquity: 0,
+    esops: 0,
+    equityPms: 0,
+    structuredProductsEquity: 0,
+    structuredProductsDebt: 0,
+  };
+}
+
 // --- Component ---
 
 interface FinanceAssistantChatProps {
@@ -225,17 +253,16 @@ interface FinanceAssistantChatProps {
   onEntrySaved?: (profileId: string, entryDate: string) => void;
 }
 
-export function FinanceAssistantChat({ selectedProfileId, onEntrySaved }: FinanceAssistantChatProps) {
-  // Load persisted session on mount
-  const persisted = useRef(loadSession());
+export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps) {
+  // Load persisted session once on mount (initializer functions run only on first render)
+  const [initialSession] = useState(() => loadSession());
 
-  const [isOpen, setIsOpen] = useState(() => persisted.current?.isOpen ?? false);
-  const [messages, setMessages] = useState<ChatMessage[]>(() => persisted.current?.messages ?? []);
+  const [isOpen, setIsOpen] = useState(() => initialSession?.isOpen ?? false);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => initialSession?.messages ?? []);
   const [userInput, setUserInput] = useState('');
-  const [step, setStep] = useState<ConversationStep>(() => persisted.current?.step ?? 'idle');
-  const [profiles, setProfiles] = useState<Profile[]>([]);
-  const [data, setData] = useState<CollectedData>(() => persisted.current?.data ?? getEmptyData());
-  const [currentBankName, setCurrentBankName] = useState(() => persisted.current?.currentBankName ?? '');
+  const [step, setStep] = useState<ConversationStep>(() => initialSession?.step ?? 'idle');
+  const [data, setData] = useState<CollectedData>(() => initialSession?.data ?? getEmptyData());
+  const [currentBankName, setCurrentBankName] = useState(() => initialSession?.currentBankName ?? '');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
@@ -265,32 +292,6 @@ export function FinanceAssistantChat({ selectedProfileId, onEntrySaved }: Financ
     }
   }, [isOpen, step]);
 
-  function getEmptyData(): CollectedData {
-    return {
-      profileId: null,
-      profileName: null,
-      entryDate: null,
-      totalStocks: 0,
-      goldInStocks: 0,
-      silverInStocks: 0,
-      totalMutualFunds: 0,
-      arbitrageFunds: 0,
-      banks: [],
-      endowmentPlans: 0,
-      nps: 0,
-      epf: 0,
-      ppf: 0,
-      ulip: 0,
-      realEstate: 0,
-      realEstatesFunds: 0,
-      privateEquity: 0,
-      esops: 0,
-      equityPms: 0,
-      structuredProductsEquity: 0,
-      structuredProductsDebt: 0,
-    };
-  }
-
   const addMessage = useCallback((msg: Omit<ChatMessage, 'id'>) => {
     setMessages(prev => [...prev, { ...msg, id: crypto.randomUUID() }]);
   }, []);
@@ -316,7 +317,6 @@ export function FinanceAssistantChat({ selectedProfileId, onEntrySaved }: Financ
       if (response.ok) {
         const result = await response.json();
         const profileList: Profile[] = result.profiles || [];
-        setProfiles(profileList);
 
         if (profileList.length === 0) {
           addMessage({ role: 'assistant', content: 'No profiles found. Please create a profile first from the main page.', type: 'text' });
