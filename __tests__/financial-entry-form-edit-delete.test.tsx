@@ -1,6 +1,10 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { FinancialEntryForm } from '@/components/financial-entry-form';
+import {
+  BalanceVisibilityProvider,
+  BALANCE_VISIBILITY_STORAGE_KEY,
+} from '@/components/balance-visibility';
 import { useToast } from '@/hooks/use-toast';
 
 // Mock the toast hook
@@ -33,6 +37,7 @@ const mockToast = vi.fn();
 describe('FinancialEntryForm Edit/Delete Functionality', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    sessionStorage.clear();
     // Default mock responses
     (global.fetch as ReturnType<typeof vi.fn>).mockImplementation((url: string) => {
       if (url.includes('/entries/latest')) {
@@ -295,7 +300,16 @@ describe('FinancialEntryForm Edit/Delete Functionality', () => {
   });
 
   it('should calculate totals correctly', async () => {
-    render(<FinancialEntryForm profileId="test-profile" />);
+    // Reveal balances via a seeded, unexpired visibility session
+    sessionStorage.setItem(
+      BALANCE_VISIBILITY_STORAGE_KEY,
+      JSON.stringify({ expiresAt: Date.now() + 15 * 60 * 1000 })
+    );
+    render(
+      <BalanceVisibilityProvider>
+        <FinancialEntryForm profileId="test-profile" />
+      </BalanceVisibilityProvider>
+    );
     
     await waitFor(() => {
       expect(screen.queryByText('Loading...')).not.toBeInTheDocument();

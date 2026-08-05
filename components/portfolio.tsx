@@ -10,6 +10,7 @@ import { ChartDataPoint, RiskDistribution } from '@/lib/types';
 import { TimePeriod } from '@/lib/analytics';
 import { getSession, getUserProfile } from '@/lib/supabase';
 import { getCache, setCache } from '@/lib/cache';
+import { useBalanceVisibility, MASKED_BALANCE } from '@/components/balance-visibility';
 import type { UserProfile } from '@/lib/types';
 
 interface Profile {
@@ -139,7 +140,10 @@ export function Portfolio() {
     });
   };
 
+  const { balancesVisible } = useBalanceVisibility();
+
   const formatCurrency = (value: number) => {
+    if (!balancesVisible) return MASKED_BALANCE;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',

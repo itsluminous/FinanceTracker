@@ -7,6 +7,7 @@ import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { ChartDataPoint, RiskDistribution } from '@/lib/types';
 import { TimePeriod } from '@/lib/analytics';
+import { useBalanceVisibility, MASKED_BALANCE } from '@/components/balance-visibility';
 
 interface ProfileAnalyticsProps {
   profileId: string;
@@ -21,6 +22,7 @@ interface AnalyticsData {
 }
 
 export function ProfileAnalytics({ profileId, profileName }: ProfileAnalyticsProps) {
+  const { balancesVisible } = useBalanceVisibility();
   const [period, setPeriod] = useState<TimePeriod>('1year');
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -198,9 +200,9 @@ export function ProfileAnalytics({ profileId, profileName }: ProfileAnalyticsPro
                     {data.chartData.map((row, index) => (
                       <tr key={index} className="border-b">
                         <td className="p-2">{new Date(row.date).toLocaleDateString()}</td>
-                        <td className="text-right p-2">₹ {row.high_medium_risk.toLocaleString()}</td>
-                        <td className="text-right p-2">₹ {row.low_risk.toLocaleString()}</td>
-                        <td className="text-right p-2 font-semibold">₹ {row.total_assets.toLocaleString()}</td>
+                        <td className="text-right p-2">{balancesVisible ? `₹ ${row.high_medium_risk.toLocaleString()}` : MASKED_BALANCE}</td>
+                        <td className="text-right p-2">{balancesVisible ? `₹ ${row.low_risk.toLocaleString()}` : MASKED_BALANCE}</td>
+                        <td className="text-right p-2 font-semibold">{balancesVisible ? `₹ ${row.total_assets.toLocaleString()}` : MASKED_BALANCE}</td>
                       </tr>
                     ))}
                   </tbody>

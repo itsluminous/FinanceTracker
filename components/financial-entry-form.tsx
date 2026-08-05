@@ -13,6 +13,7 @@ import { supabase } from '@/lib/supabase';
 import { ChevronDown, ChevronUp, CalendarIcon, Trash2 } from 'lucide-react';
 import { FinancialEntryFormSkeleton } from './loading-skeletons';
 import { clearAllCache } from '@/lib/cache';
+import { useBalanceVisibility, MASKED_BALANCE } from '@/components/balance-visibility';
 
 interface FinancialEntryFormProps {
   profileId: string;
@@ -21,6 +22,7 @@ interface FinancialEntryFormProps {
 
 export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormProps) {
   const { toast } = useToast();
+  const { balancesVisible } = useBalanceVisibility();
   const [entryDate, setEntryDate] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -889,15 +891,15 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
           <div className="border-t pt-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="font-medium">Total High/Medium Risk:</span>
-              <span>₹ {totalHighMediumRisk.toFixed(2)}</span>
+              <span>{balancesVisible ? `₹ ${totalHighMediumRisk.toFixed(2)}` : MASKED_BALANCE}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="font-medium">Total Low Risk:</span>
-              <span>₹ {totalLowRisk.toFixed(2)}</span>
+              <span>{balancesVisible ? `₹ ${totalLowRisk.toFixed(2)}` : MASKED_BALANCE}</span>
             </div>
             <div className="flex justify-between text-lg font-bold border-t pt-2">
               <span>Total Assets:</span>
-              <span>₹ {totalAssets.toFixed(2)}</span>
+              <span>{balancesVisible ? `₹ ${totalAssets.toFixed(2)}` : MASKED_BALANCE}</span>
             </div>
           </div>
 

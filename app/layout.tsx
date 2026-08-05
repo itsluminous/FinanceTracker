@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthHandler } from "@/components/auth-handler";
 import { Toaster } from "@/components/ui/toaster";
 import { ThemeProvider } from "@/components/theme-provider";
+import { BalanceVisibilityProvider } from "@/components/balance-visibility";
 import { DebugConsole } from "@/components/debug-console";
 
 const geistSans = Geist({
@@ -38,9 +39,11 @@ export default function RootLayout({
           storageKey="finance-tracker-theme"
           disableTransitionOnChange
         >
-          <AuthHandler>
-            {children}
-          </AuthHandler>
+          <BalanceVisibilityProvider>
+            <AuthHandler>
+              {children}
+            </AuthHandler>
+          </BalanceVisibilityProvider>
           <Toaster />
           {process.env.NODE_ENV === 'development' && <DebugConsole />}
         </ThemeProvider>

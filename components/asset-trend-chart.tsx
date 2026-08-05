@@ -4,6 +4,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { ChartDataPoint } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useBalanceVisibility, MASKED_BALANCE, MASKED_BALANCE_COMPACT } from '@/components/balance-visibility';
 
 interface AssetTrendChartProps {
   data: ChartDataPoint[];
@@ -27,17 +28,20 @@ interface CustomTooltipProps {
 
 // Custom tooltip component defined outside render
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  // Rendered inside the chart's React tree, so the visibility context applies.
+  const { balancesVisible } = useBalanceVisibility();
+
   if (active && payload && payload.length) {
     return (
       <div className="rounded-lg border bg-popover p-2 sm:p-3 shadow-lg">
         <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-popover-foreground">{label}</p>
         {payload.map((entry, index: number) => (
           <p key={index} className="text-xs sm:text-sm" style={{ color: entry.color }}>
-            {entry.name}: {new Intl.NumberFormat('en-IN', {
+            {entry.name}: {balancesVisible ? new Intl.NumberFormat('en-IN', {
               style: 'currency',
               currency: 'INR',
               maximumFractionDigits: 0
-            }).format(entry.value)}
+            }).format(entry.value) : MASKED_BALANCE}
           </p>
         ))}
       </div>
@@ -53,6 +57,8 @@ export function AssetTrendChart({
   showRiskBreakdown = false,
   onError
 }: AssetTrendChartProps) {
+  const { balancesVisible } = useBalanceVisibility();
+
   if (!data || data.length === 0) {
     return (
       <Card className="chart-container">
@@ -71,6 +77,7 @@ export function AssetTrendChart({
 
   // Format currency for display
   const formatCurrency = (value: number) => {
+    if (!balancesVisible) return MASKED_BALANCE_COMPACT;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -158,12 +165,12 @@ export function AssetTrendChart({
               <div>
                 <p className="text-[10px] sm:text-xs text-gray-500">Latest Value</p>
                 <p className="text-sm sm:text-lg font-semibold text-gray-900">
-                  {new Intl.NumberFormat('en-IN', {
+                  {balancesVisible ? new Intl.NumberFormat('en-IN', {
                     style: 'currency',
                     currency: 'INR',
                     maximumFractionDigits: 0,
                     notation: 'compact'
-                  }).format(data[data.length - 1].total_assets)}
+                  }).format(data[data.length - 1].total_assets) : MASKED_BALANCE}
                 </p>
               </div>
               <div>

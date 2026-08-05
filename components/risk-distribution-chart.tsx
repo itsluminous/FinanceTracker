@@ -4,6 +4,7 @@
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
 import { RiskDistribution } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useBalanceVisibility, MASKED_BALANCE } from '@/components/balance-visibility';
 
 interface RiskDistributionChartProps {
   data: RiskDistribution[];
@@ -23,6 +24,8 @@ export function RiskDistributionChart({
   description = 'Asset allocation by risk category',
   onError
 }: RiskDistributionChartProps) {
+  const { balancesVisible } = useBalanceVisibility();
+
   if (!data || data.length === 0) {
     return (
       <Card className="chart-container">
@@ -41,6 +44,7 @@ export function RiskDistributionChart({
 
   // Format currency for display
   const formatCurrency = (value: number) => {
+    if (!balancesVisible) return MASKED_BALANCE;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -82,7 +86,7 @@ export function RiskDistributionChart({
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number | undefined) => value ? formatCurrency(value) : '₹0'}
+                formatter={(value: number | undefined) => value ? formatCurrency(value) : (balancesVisible ? '₹0' : MASKED_BALANCE)}
                 contentStyle={{
                   backgroundColor: 'white',
                   border: '1px solid #e5e7eb',

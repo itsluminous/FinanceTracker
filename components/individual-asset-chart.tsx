@@ -4,6 +4,7 @@
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { ChartDataPoint } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { useBalanceVisibility, MASKED_BALANCE, MASKED_BALANCE_COMPACT } from '@/components/balance-visibility';
 
 interface IndividualAssetChartProps {
   data: ChartDataPoint[];
@@ -26,6 +27,9 @@ interface CustomTooltipProps {
 
 // Custom tooltip component defined outside render
 const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
+  // Rendered inside the chart's React tree, so the visibility context applies.
+  const { balancesVisible } = useBalanceVisibility();
+
   if (active && payload && payload.length) {
     // Sort payload by value in descending order
     const sortedPayload = [...payload].sort((a, b) => b.value - a.value);
@@ -35,11 +39,11 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
         <p className="mb-1 sm:mb-2 text-xs sm:text-sm font-medium text-popover-foreground">{label}</p>
         {sortedPayload.map((entry, index: number) => (
           <p key={index} className="text-xs sm:text-sm" style={{ color: entry.color }}>
-            {entry.name}: {new Intl.NumberFormat('en-IN', {
+            {entry.name}: {balancesVisible ? new Intl.NumberFormat('en-IN', {
               style: 'currency',
               currency: 'INR',
               maximumFractionDigits: 0
-            }).format(entry.value)}
+            }).format(entry.value) : MASKED_BALANCE}
           </p>
         ))}
       </div>
@@ -76,6 +80,8 @@ export function IndividualAssetChart({
   description = 'Growth trends for each asset category',
   onError
 }: IndividualAssetChartProps) {
+  const { balancesVisible } = useBalanceVisibility();
+
   if (!data || data.length === 0) {
     return (
       <Card className="chart-container">
@@ -102,6 +108,7 @@ export function IndividualAssetChart({
 
   // Format currency for display
   const formatCurrency = (value: number) => {
+    if (!balancesVisible) return MASKED_BALANCE_COMPACT;
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
       currency: 'INR',
@@ -178,11 +185,11 @@ export function IndividualAssetChart({
                           <span className="text-gray-600 text-xs">{asset.name}:</span>
                         </div>
                         <span className="font-medium text-xs">
-                          {new Intl.NumberFormat('en-IN', {
+                          {balancesVisible ? new Intl.NumberFormat('en-IN', {
                             style: 'currency',
                             currency: 'INR',
                             maximumFractionDigits: 0
-                          }).format(asset.value)}
+                          }).format(asset.value) : MASKED_BALANCE}
                         </span>
                       </div>
                     ))}

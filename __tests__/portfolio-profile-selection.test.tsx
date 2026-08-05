@@ -1,6 +1,20 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import { Portfolio } from '@/components/portfolio';
+import {
+  BalanceVisibilityProvider,
+  BALANCE_VISIBILITY_STORAGE_KEY,
+  MASKED_BALANCE,
+} from '@/components/balance-visibility';
+
+// Renders with balances revealed (seeded, unexpired visibility session)
+const renderWithBalancesVisible = (ui: React.ReactElement) => {
+  sessionStorage.setItem(
+    BALANCE_VISIBILITY_STORAGE_KEY,
+    JSON.stringify({ expiresAt: Date.now() + 15 * 60 * 1000 })
+  );
+  return render(<BalanceVisibilityProvider>{ui}</BalanceVisibilityProvider>);
+};
 
 // Mock the dependencies
 vi.mock('@/lib/supabase', () => ({
@@ -33,6 +47,7 @@ describe('Portfolio Profile Selection', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
+    sessionStorage.clear();
     
     // Mock successful session
     mockGetSession.mockResolvedValue({
@@ -117,11 +132,51 @@ describe('Portfolio Profile Selection', () => {
         }),
       });
 
-    render(<Portfolio />);
+    renderWithBalancesVisible(<Portfolio />);
 
     await waitFor(() => {
       expect(screen.getByText('Total Portfolio Value')).toBeInTheDocument();
       expect(screen.getByText('₹1,00,000')).toBeInTheDocument();
+    });
+  });
+
+  it('should mask portfolio value by default when balances are hidden', async () => {
+    // Mock API responses
+    (global.fetch as ReturnType<typeof vi.fn>)
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          profiles: [
+            { id: 'profile-1', name: 'Personal' },
+          ],
+        }),
+      })
+      .mockResolvedValueOnce({
+        ok: true,
+        json: () => Promise.resolve({
+          chartData: [
+            { date: '2024-01-01', total_assets: 100000, high_medium_risk: 60000, low_risk: 40000 },
+          ],
+          riskDistribution: [
+            { name: 'High/Medium Risk', value: 60000, percentage: 60 },
+            { name: 'Low Risk', value: 40000, percentage: 40 },
+          ],
+          totalAssets: 100000,
+          period: '1year',
+          profileCount: 1,
+        }),
+      });
+
+    render(
+      <BalanceVisibilityProvider>
+        <Portfolio />
+      </BalanceVisibilityProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByText('Total Portfolio Value')).toBeInTheDocument();
+      expect(screen.getByText(MASKED_BALANCE)).toBeInTheDocument();
+      expect(screen.queryByText('₹1,00,000')).not.toBeInTheDocument();
     });
   });
 

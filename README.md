@@ -15,6 +15,7 @@ A responsive web application for tracking and visualizing financial assets acros
 - 💰 **Financial Data Entry** - Comprehensive asset tracking across risk categories
 - 🤖 **Guided Chat Assistant** - Step-by-step data entry with auto-calculations and expression support
 - 📈 **Visual Analytics** - Interactive charts showing risk distribution and asset trends
+- 🙈 **Balance Privacy** - Balances hidden by default; eye toggle with 15-minute auto-hide and biometric/screen-lock check on phones
 - 🎯 **Combined Portfolio View** - Aggregate view across all profiles
 - 📱 **Responsive Design** - Optimized for mobile, tablet, and desktop
 - 🔒 **Row Level Security** - Database-level access control via Supabase RLS
@@ -261,6 +262,15 @@ personal-finance-tracker/
 - Time period filters (30 days, 3 months, 1 year)
 - Combined portfolio view across all profiles
 - Responsive chart rendering
+
+### Balance Privacy
+- All monetary values are **hidden by default** on page load, shown as `₹ ••••••`
+- Eye toggle in the top bar reveals balances — icon-only on mobile, icon + "Show balances" on desktop
+- Masking covers every balance on the page: portfolio total, chart tooltips (tap/hover), chart axis ticks, summary values, analytics tables, and entry form totals
+- Visibility automatically expires after **15 minutes** (auth session is unaffected)
+- Visibility survives page reloads within the 15-minute window (sessionStorage)
+- On phones, revealing balances triggers the device screen-lock check (biometric, with PIN/pattern fallback) via WebAuthn — best-effort: skipped if the device/browser can't perform it, but a cancelled/failed check keeps balances hidden
+- Requires HTTPS for the screen-lock check (works on Vercel; skipped on plain-HTTP localhost)
 
 ### Responsive Design
 - Mobile-first approach (< 640px)

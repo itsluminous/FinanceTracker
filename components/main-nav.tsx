@@ -8,6 +8,7 @@ import { UserNav } from '@/components/user-nav';
 import { ProfileSelector } from '@/components/profile-selector';
 import { ProfileDialog } from '@/components/profile-dialog';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { BalanceVisibilityToggle } from '@/components/balance-visibility-toggle';
 
 interface UserProfile {
   id: string;
@@ -87,6 +88,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
             {/* Desktop Navigation */}
             <div className="hidden md:flex items-center gap-2">
+              <BalanceVisibilityToggle />
               {canEditProfiles && (
                 <Button
                   variant={isActive('/profiles') ? 'secondary' : 'outline'}
@@ -103,6 +105,7 @@ export function MainNav({ showProfileSelector, selectedProfileId, onProfileSelec
 
             {/* Mobile Menu Button - Removed, Profiles now in user menu */}
             <div className="md:hidden flex items-center gap-2">
+              <BalanceVisibilityToggle />
               <ThemeToggle />
               <UserNav />
             </div>
