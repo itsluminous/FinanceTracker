@@ -54,6 +54,59 @@ function getSupabaseClient() {
 
 export const supabase = getSupabaseClient();
 
+/**
+ * Check whether the Supabase project is reachable.
+ *
+ * Free-tier Supabase projects are paused after ~1 week of inactivity; requests
+ * then hang or fail, leaving the app stuck on a loading screen. This probes the
+ * lightweight auth health endpoint with a hard timeout so callers can show a
+ * helpful message instead of loading forever.
+ */
+export async function checkSupabaseConnection(timeoutMs = 8000): Promise<boolean> {
+  if (!supabaseUrl || !supabaseAnonKey) {
+    return false;
+  }
+
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const response = await fetch(`${supabaseUrl}/auth/v1/health`, {
+      headers: { apikey: supabaseAnonKey },
+      signal: controller.signal,
+    });
+    return response.ok;
+  } catch {
+    // Network error, DNS failure, or timeout — project is unreachable/paused
+    return false;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/**
+ * Reject if a promise doesn't settle within timeoutMs.
+ * Used to avoid indefinite loading states when the database is paused/unreachable.
+ */
+export function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(
+      () => reject(new Error(`Request timed out after ${timeoutMs}ms`)),
+      timeoutMs
+    );
+    promise.then(
+      (value) => {
+        clearTimeout(timer);
+        resolve(value);
+      },
+      (error) => {
+        clearTimeout(timer);
+        reject(error);
+      }
+    );
+  });
+}
+
 // Auth helper functions
 
 /**
