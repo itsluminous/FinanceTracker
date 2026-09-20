@@ -2,9 +2,14 @@
 
 import { useEffect, useState, useRef } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { supabase, getUserProfile } from '@/lib/supabase';
+import { supabase, getUserProfile, checkSupabaseConnection, withTimeout } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
+import { DatabaseUnavailable } from '@/components/database-unavailable';
 import type { AuthChangeEvent, Session } from '@supabase/supabase-js';
+
+// How long to wait for the auth check before assuming something is wrong.
+// A paused Supabase project can leave requests hanging for 30+ seconds.
+const AUTH_CHECK_TIMEOUT_MS = 10000;
 
 // Helper to get cached auth state from localStorage
 const getCachedAuthState = () => {
@@ -44,6 +49,7 @@ const setCachedAuthState = (user: unknown) => {
 export function AuthHandler({ children }: { children: React.ReactNode }) {
   const cachedState = getCachedAuthState();
   const [loading, setLoading] = useState(!cachedState);
+  const [dbUnavailable, setDbUnavailable] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
   const { toast } = useToast();
@@ -59,13 +65,25 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
 
     const checkAuthAndStatus = async () => {
       try {
-        // Use getUser() - more reliable than getSession() on mobile
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
+        // Use getUser() - more reliable than getSession() on mobile.
+        // Cap it with a timeout: when the Supabase project is paused, this
+        // call can hang for 30+ seconds behind token-refresh retries.
+        const { data: { user }, error: userError } = await withTimeout(
+          supabase.auth.getUser(),
+          AUTH_CHECK_TIMEOUT_MS
+        );
         
         // Handle user errors
         if (userError) {
           console.error('❌ [AuthHandler] User error:', userError);
           setCachedAuthState(null);
+          // Distinguish an expired session from an unreachable (paused) database
+          const reachable = await checkSupabaseConnection();
+          if (!reachable) {
+            setDbUnavailable(true);
+            setLoading(false);
+            return;
+          }
           if (pathname !== '/auth/login') {
             toast({
               title: 'Session Error',
@@ -133,6 +151,15 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
         console.error('❌ [AuthHandler] Auth check error:', error);
         setCachedAuthState(null);
         
+        // The timeout above lands here when the database hangs. Check whether
+        // Supabase is reachable at all (paused free-tier projects are not).
+        const reachable = await checkSupabaseConnection();
+        if (!reachable) {
+          setDbUnavailable(true);
+          setLoading(false);
+          return;
+        }
+        
         if (pathname !== '/auth/login') {
           toast({
             title: 'Connection Error',
@@ -187,6 +214,10 @@ export function AuthHandler({ children }: { children: React.ReactNode }) {
       subscription.unsubscribe();
     };
   }, [router, pathname, toast]);
+
+  if (dbUnavailable) {
+    return <DatabaseUnavailable />;
+  }
 
   if (loading) {
     return (
