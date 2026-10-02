@@ -25,6 +25,7 @@ const assetFields = [
   'private_equity',
   'equity_mutual_funds',
   'structured_products_equity',
+  'us_stocks',
   // Low Risk
   'bank_balance',
   'debt_mutual_funds',
@@ -35,6 +36,7 @@ const assetFields = [
   'ppf',
   'structured_products_debt',
   'gold_etfs_funds',
+  'bonds',
 ];
 
 describe('Property Test: Decimal Precision Preservation', () => {

@@ -81,6 +81,7 @@ interface CollectedData {
   totalStocks: number;
   goldInStocks: number;
   silverInStocks: number;
+  usStocks: number;
   // Mutual Funds
   totalMutualFunds: number;
   arbitrageFunds: number;
@@ -99,6 +100,7 @@ interface CollectedData {
   equityPms: number;
   structuredProductsEquity: number;
   structuredProductsDebt: number;
+  bonds: number;
 }
 
 interface BankData {
@@ -115,6 +117,7 @@ type ConversationStep =
   | 'stocks-total'
   | 'stocks-gold'
   | 'stocks-silver'
+  | 'us-stocks'
   | 'mf-total'
   | 'mf-arbitrage'
   | 'bank-ask-hdfc'
@@ -151,6 +154,7 @@ type ConversationStep =
   | 'equity-pms'
   | 'structured-products-equity'
   | 'structured-products-debt'
+  | 'bonds'
   | 'confirm-summary'
   | 'saving'
   | 'done';
@@ -226,6 +230,7 @@ function getEmptyData(): CollectedData {
     totalStocks: 0,
     goldInStocks: 0,
     silverInStocks: 0,
+    usStocks: 0,
     totalMutualFunds: 0,
     arbitrageFunds: 0,
     banks: [],
@@ -241,6 +246,7 @@ function getEmptyData(): CollectedData {
     equityPms: 0,
     structuredProductsEquity: 0,
     structuredProductsDebt: 0,
+    bonds: 0,
   };
 }
 
@@ -261,7 +267,9 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
   const [messages, setMessages] = useState<ChatMessage[]>(() => initialSession?.messages ?? []);
   const [userInput, setUserInput] = useState('');
   const [step, setStep] = useState<ConversationStep>(() => initialSession?.step ?? 'idle');
-  const [data, setData] = useState<CollectedData>(() => initialSession?.data ?? getEmptyData());
+  const [data, setData] = useState<CollectedData>(() =>
+    initialSession?.data ? { ...getEmptyData(), ...initialSession.data } : getEmptyData()
+  );
   const [currentBankName, setCurrentBankName] = useState(() => initialSession?.currentBankName ?? '');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -502,6 +510,14 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
         const val = processAmountInput(input, { max: maxSilver, maxLabel: 'remaining stocks (after Gold)' });
         if (val === null) return;
         setData(prev => ({ ...prev, silverInStocks: val }));
+        addMessage({ role: 'assistant', content: 'How much do you have in US Stocks (in ₹)? (Enter 0 if none)', type: 'text' });
+        setStep('us-stocks');
+        break;
+      }
+      case 'us-stocks': {
+        const val = processAmountInput(input);
+        if (val === null) return;
+        setData(prev => ({ ...prev, usStocks: val }));
         // Move to Mutual Funds
         addMessage({ role: 'assistant', content: '📊 Mutual Funds', type: 'heading' });
         addMessage({ role: 'assistant', content: 'What is the total value of your Mutual Funds?', type: 'text' });
@@ -763,8 +779,16 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       case 'structured-products-debt': {
         const val = processAmountInput(input);
         if (val === null) return;
+        setData(prev => ({ ...prev, structuredProductsDebt: val }));
+        addMessage({ role: 'assistant', content: 'How much in Bonds? (Enter 0 if none)', type: 'text' });
+        setStep('bonds');
+        break;
+      }
+      case 'bonds': {
+        const val = processAmountInput(input);
+        if (val === null) return;
         setData(prev => {
-          const updatedData = { ...prev, structuredProductsDebt: val };
+          const updatedData = { ...prev, bonds: val };
           // Show summary after a tick so state is up to date
           setTimeout(() => showSummary(updatedData), 0);
           return updatedData;
@@ -800,6 +824,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       private_equity: d.privateEquity,
       equity_mutual_funds: equityMutualFunds,
       structured_products_equity: d.structuredProductsEquity,
+      us_stocks: d.usStocks,
       bank_balance: bankBalance,
       debt_mutual_funds: debtMutualFunds,
       endowment_plans: d.endowmentPlans,
@@ -809,6 +834,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       ppf: d.ppf,
       structured_products_debt: d.structuredProductsDebt,
       gold_etfs_funds: goldEtfsFunds,
+      bonds: d.bonds,
     };
   };
 
@@ -817,11 +843,11 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
     const totalHighMedium =
       values.direct_equity + values.esops + values.equity_pms + values.ulip +
       values.real_estate + values.real_estate_funds + values.private_equity +
-      values.equity_mutual_funds + values.structured_products_equity;
+      values.equity_mutual_funds + values.structured_products_equity + values.us_stocks;
     const totalLow =
       values.bank_balance + values.debt_mutual_funds + values.endowment_plans +
       values.fixed_deposits + values.nps + values.epf + values.ppf +
-      values.structured_products_debt + values.gold_etfs_funds;
+      values.structured_products_debt + values.gold_etfs_funds + values.bonds;
     const totalAssets = totalHighMedium + totalLow;
 
     const summaryLines = [
@@ -838,6 +864,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       `  Private Equity: ₹${formatIndianNumber(values.private_equity)}`,
       `  Equity Mutual Funds: ₹${formatIndianNumber(values.equity_mutual_funds)}`,
       `  Structured Products (Equity): ₹${formatIndianNumber(values.structured_products_equity)}`,
+      `  US Stocks: ₹${formatIndianNumber(values.us_stocks)}`,
       `  **Subtotal:** ₹${formatIndianNumber(totalHighMedium)}`,
       '',
       '**Low Risk Assets:**',
@@ -850,6 +877,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       `  PPF: ₹${formatIndianNumber(values.ppf)}`,
       `  Structured Products (Debt): ₹${formatIndianNumber(values.structured_products_debt)}`,
       `  Gold ETFs/Funds: ₹${formatIndianNumber(values.gold_etfs_funds)}`,
+      `  Bonds: ₹${formatIndianNumber(values.bonds)}`,
       `  **Subtotal:** ₹${formatIndianNumber(totalLow)}`,
       '',
       `**Total Assets: ₹${formatIndianNumber(totalAssets)}**`,
@@ -914,6 +942,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
                 private_equity: values.private_equity,
                 equity_mutual_funds: values.equity_mutual_funds,
                 structured_products_equity: values.structured_products_equity,
+                us_stocks: values.us_stocks,
               },
               low_risk: {
                 bank_balance: values.bank_balance,
@@ -925,6 +954,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
                 ppf: values.ppf,
                 structured_products_debt: values.structured_products_debt,
                 gold_etfs_funds: values.gold_etfs_funds,
+                bonds: values.bonds,
               },
             }),
           });
@@ -948,6 +978,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
                 private_equity: values.private_equity,
                 equity_mutual_funds: values.equity_mutual_funds,
                 structured_products_equity: values.structured_products_equity,
+                us_stocks: values.us_stocks,
               },
               low_risk: {
                 bank_balance: values.bank_balance,
@@ -959,6 +990,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
                 ppf: values.ppf,
                 structured_products_debt: values.structured_products_debt,
                 gold_etfs_funds: values.gold_etfs_funds,
+                bonds: values.bonds,
               },
             }),
           });
@@ -983,6 +1015,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
               private_equity: values.private_equity,
               equity_mutual_funds: values.equity_mutual_funds,
               structured_products_equity: values.structured_products_equity,
+              us_stocks: values.us_stocks,
             },
             low_risk: {
               bank_balance: values.bank_balance,
@@ -994,6 +1027,7 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
               ppf: values.ppf,
               structured_products_debt: values.structured_products_debt,
               gold_etfs_funds: values.gold_etfs_funds,
+              bonds: values.bonds,
             },
           }),
         });
@@ -1060,6 +1094,8 @@ export function FinanceAssistantChat({ onEntrySaved }: FinanceAssistantChatProps
       case 'nps':
       case 'epf':
       case 'ppf':
+      case 'us-stocks':
+      case 'bonds':
         return 'e.g. 8,00,000 or 0';
       default:
         return 'Enter amount (e.g. 13,67,986)';

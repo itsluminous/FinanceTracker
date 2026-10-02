@@ -22,7 +22,8 @@ describe('Property 9: Analytics time filter consistency', () => {
       real_estate_funds: fc.double({ min: 0, max: 1000000, noNaN: true }),
       private_equity: fc.double({ min: 0, max: 1000000, noNaN: true }),
       equity_mutual_funds: fc.double({ min: 0, max: 1000000, noNaN: true }),
-      structured_products_equity: fc.double({ min: 0, max: 1000000, noNaN: true })
+      structured_products_equity: fc.double({ min: 0, max: 1000000, noNaN: true }),
+      us_stocks: fc.double({ min: 0, max: 1000000, noNaN: true })
     }),
     low_risk: fc.record({
       bank_balance: fc.double({ min: 0, max: 1000000, noNaN: true }),
@@ -33,7 +34,8 @@ describe('Property 9: Analytics time filter consistency', () => {
       epf: fc.double({ min: 0, max: 1000000, noNaN: true }),
       ppf: fc.double({ min: 0, max: 1000000, noNaN: true }),
       structured_products_debt: fc.double({ min: 0, max: 1000000, noNaN: true }),
-      gold_etfs_funds: fc.double({ min: 0, max: 1000000, noNaN: true })
+      gold_etfs_funds: fc.double({ min: 0, max: 1000000, noNaN: true }),
+      bonds: fc.double({ min: 0, max: 1000000, noNaN: true })
     }),
     total_high_medium_risk: fc.double({ min: 0, max: 9000000, noNaN: true }),
     total_low_risk: fc.double({ min: 0, max: 9000000, noNaN: true }),

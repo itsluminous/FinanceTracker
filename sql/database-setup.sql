@@ -54,10 +54,11 @@ CREATE TABLE IF NOT EXISTS financial_entries (
   private_equity DECIMAL(15, 2) DEFAULT 0,
   equity_mutual_funds DECIMAL(15, 2) DEFAULT 0,
   structured_products_equity DECIMAL(15, 2) DEFAULT 0,
+  us_stocks DECIMAL(15, 2) DEFAULT 0,
   total_high_medium_risk DECIMAL(15, 2) GENERATED ALWAYS AS (
     direct_equity + esops + equity_pms + ulip + real_estate + 
     real_estate_funds + private_equity + equity_mutual_funds + 
-    structured_products_equity
+    structured_products_equity + us_stocks
   ) STORED,
   
   -- Low Risk Assets
@@ -70,18 +71,19 @@ CREATE TABLE IF NOT EXISTS financial_entries (
   ppf DECIMAL(15, 2) DEFAULT 0,
   structured_products_debt DECIMAL(15, 2) DEFAULT 0,
   gold_etfs_funds DECIMAL(15, 2) DEFAULT 0,
+  bonds DECIMAL(15, 2) DEFAULT 0,
   total_low_risk DECIMAL(15, 2) GENERATED ALWAYS AS (
     bank_balance + debt_mutual_funds + endowment_plans + fixed_deposits + 
-    nps + epf + ppf + structured_products_debt + gold_etfs_funds
+    nps + epf + ppf + structured_products_debt + gold_etfs_funds + bonds
   ) STORED,
   
   -- Total Assets (calculated directly from all fields to avoid generated column dependency)
   total_assets DECIMAL(15, 2) GENERATED ALWAYS AS (
     direct_equity + esops + equity_pms + ulip + real_estate + 
     real_estate_funds + private_equity + equity_mutual_funds + 
-    structured_products_equity +
+    structured_products_equity + us_stocks +
     bank_balance + debt_mutual_funds + endowment_plans + fixed_deposits + 
-    nps + epf + ppf + structured_products_debt + gold_etfs_funds
+    nps + epf + ppf + structured_products_debt + gold_etfs_funds + bonds
   ) STORED,
   
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),

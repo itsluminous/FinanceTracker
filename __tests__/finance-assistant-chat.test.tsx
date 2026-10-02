@@ -643,3 +643,101 @@ describe('FinanceAssistantChat Input Validation', () => {
     });
   });
 });
+
+describe('FinanceAssistantChat US Stocks and Bonds steps', () => {
+  const baseData = {
+    profileId: 'profile-1', profileName: 'Alice', entryDate: '2026-07-26',
+    totalStocks: 1000000, goldInStocks: 100000, silverInStocks: 0, usStocks: 0,
+    totalMutualFunds: 0, arbitrageFunds: 0, banks: [],
+    endowmentPlans: 0, nps: 0, epf: 0, ppf: 0, ulip: 0,
+    realEstate: 0, realEstatesFunds: 0, privateEquity: 0,
+    esops: 0, equityPms: 0, structuredProductsEquity: 0, structuredProductsDebt: 0,
+    bonds: 0,
+  };
+
+  const seedSession = (step: string, prompt: string, data = baseData) => {
+    localStorage.setItem('finance-assistant-session', JSON.stringify({
+      messages: [{ id: '1', role: 'assistant', content: prompt, type: 'text' }],
+      step,
+      data,
+      currentBankName: '',
+      isOpen: true,
+      timestamp: Date.now(),
+    }));
+  };
+
+  beforeEach(() => {
+    localStorage.clear();
+    vi.clearAllMocks();
+  });
+
+  it('asks about US Stocks after Silver, then moves on to Mutual Funds', async () => {
+    const user = userEvent.setup();
+    seedSession('stocks-silver', 'Silver?');
+
+    render(<FinanceAssistantChat onEntrySaved={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('Silver?')).toBeInTheDocument());
+
+    await user.type(screen.getByPlaceholderText('Enter amount (e.g. 13,67,986)'), '50,000');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText(/how much do you have in US Stocks/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('e.g. 8,00,000 or 0'), '2,50,000');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText(/total value of your Mutual Funds/i)).toBeInTheDocument();
+    });
+  });
+
+  it('asks about Bonds after Structured Products (Debt) and includes both new fields in the summary', async () => {
+    const user = userEvent.setup();
+    seedSession('structured-products-debt', 'SP Debt?', { ...baseData, usStocks: 250000 });
+
+    render(<FinanceAssistantChat onEntrySaved={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('SP Debt?')).toBeInTheDocument());
+
+    await user.type(screen.getByPlaceholderText('Enter amount (e.g. 13,67,986)'), '0');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText(/how much in Bonds/i)).toBeInTheDocument();
+    });
+
+    await user.type(screen.getByPlaceholderText('e.g. 8,00,000 or 0'), '3,00,000');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => {
+      expect(screen.getByText('✅ Summary')).toBeInTheDocument();
+    });
+    expect(screen.getByText(/US Stocks: ₹2,50,000/)).toBeInTheDocument();
+    expect(screen.getByText(/Bonds: ₹3,00,000/)).toBeInTheDocument();
+  });
+
+  it('restores a session saved before US Stocks/Bonds existed without breaking the flow', async () => {
+    const user = userEvent.setup();
+    // Legacy persisted data: no usStocks / bonds keys
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { usStocks, bonds, ...legacyData } = baseData;
+    seedSession('structured-products-debt', 'SP Debt?', legacyData as typeof baseData);
+
+    render(<FinanceAssistantChat onEntrySaved={vi.fn()} />);
+    await waitFor(() => expect(screen.getByText('SP Debt?')).toBeInTheDocument());
+
+    await user.type(screen.getByPlaceholderText('Enter amount (e.g. 13,67,986)'), '0');
+    await user.keyboard('{Enter}');
+    await waitFor(() => expect(screen.getByText(/how much in Bonds/i)).toBeInTheDocument());
+
+    await user.type(screen.getByPlaceholderText('e.g. 8,00,000 or 0'), '0');
+    await user.keyboard('{Enter}');
+
+    await waitFor(() => expect(screen.getByText('✅ Summary')).toBeInTheDocument());
+    // Defaults filled in: no "NaN" anywhere in the summary
+    expect(screen.queryByText(/NaN/)).not.toBeInTheDocument();
+    expect(screen.getByText(/US Stocks: ₹0/)).toBeInTheDocument();
+    expect(screen.getByText(/Bonds: ₹0/)).toBeInTheDocument();
+  });
+});

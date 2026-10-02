@@ -50,7 +50,8 @@ A responsive web application for tracking and visualizing financial assets acros
 4. Set up the database:
    - Go to your Supabase project dashboard
    - Navigate to SQL Editor
-   - Run the SQL script from `database-setup.sql`
+   - Run the SQL script from `sql/database-setup.sql`
+   - **Upgrading an existing database?** Run the scripts in `sql/migrations/` in date order instead (e.g. `sql/migrations/2026-10-02-add-bonds-us-stocks.sql` adds the Bonds and US Stocks columns and rebuilds the generated totals)
 
 5. Run the development server:
    ```bash
@@ -212,7 +213,10 @@ personal-finance-tracker/
 │   └── ...               # Feature components
 ├── lib/                   # Utility functions and types
 ├── __tests__/            # Test files
-├── database-setup.sql    # Database schema and RLS policies
+├── sql/                   # Database scripts (run in the Supabase SQL Editor)
+│   ├── database-setup.sql # Full schema, triggers, and RLS policies for fresh installs
+│   ├── migrations/        # Dated, incremental changes for existing databases
+│   └── maintenance/       # Operational scripts: reset database, delete a user, re-create signup trigger
 └── .github/workflows/    # CI/CD configuration
 ```
 
@@ -231,9 +235,9 @@ personal-finance-tracker/
 - Cascade deletion of profile data
 
 ### Financial Data Entry
-- Track 18 different asset categories:
-  - **High/Medium Risk**: Direct Equity, ESOPs, Equity PMS, ULIP, Real Estate, Real Estate Funds, Private Equity, Equity Mutual Funds, Structured Products - Equity
-  - **Low Risk**: Bank Balance, Debt Mutual Funds, Endowment Plans, Fixed Deposits, NPS, EPF, PPF, Structured Products - Debt, Gold ETFs/Funds
+- Track 20 different asset categories:
+  - **High/Medium Risk**: Direct Equity, ESOPs, Equity PMS, ULIP, Real Estate, Real Estate Funds, Private Equity, Equity Mutual Funds, Structured Products - Equity, US Stocks
+  - **Low Risk**: Bank Balance, Debt Mutual Funds, Endowment Plans, Fixed Deposits, NPS, EPF, PPF, Structured Products - Debt, Gold ETFs/Funds, Bonds
 - Automatic calculation of totals
 - Decimal precision preservation (2 decimal places)
 - Pre-fill with most recent data
@@ -242,7 +246,7 @@ personal-finance-tracker/
 ### Guided Chat Assistant
 - Floating chat button on the Financial Entry page for quick, guided data entry
 - Step-by-step conversation flow:
-  1. Select profile → Pick date → Enter stock values → Mutual funds → Bank accounts → Other assets → Review & save
+  1. Select profile → Pick date → Enter stock values (incl. US Stocks) → Mutual funds → Bank accounts → Other assets (ending with Bonds) → Review & save
 - **Auto-calculations** — No manual math needed:
   - Direct Equity = Total Stocks − Gold − Silver
   - Gold ETFs/Funds = Gold + Silver
@@ -292,8 +296,10 @@ If the build fails:
 
 If database operations fail:
 1. Verify Supabase credentials in `.env.local`
-2. Ensure `database-setup.sql` has been run
+2. Ensure `sql/database-setup.sql` has been run (plus any newer scripts in `sql/migrations/`)
 3. Check RLS policies are enabled in Supabase dashboard
+4. If sign-ups fail to create a `user_profiles` row, re-run `sql/maintenance/fix-user-profile-creation.sql` to recreate the signup trigger
+5. To wipe everything and start over, run `sql/maintenance/reset-database.sql` followed by `sql/database-setup.sql` (**deletes all data and users**)
 
 ### Test Failures
 

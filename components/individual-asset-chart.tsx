@@ -63,6 +63,7 @@ const assetFields = [
   { key: 'private_equity', name: 'Private Equity', color: '#06b6d4' },
   { key: 'equity_mutual_funds', name: 'Equity Mutual Funds', color: '#84cc16' },
   { key: 'structured_products_equity', name: 'Structured Products (Equity)', color: '#f97316' },
+  { key: 'us_stocks', name: 'US Stocks', color: '#1d4ed8' },
   { key: 'bank_balance', name: 'Bank Balance', color: '#10b981' },
   { key: 'debt_mutual_funds', name: 'Debt Mutual Funds', color: '#6366f1' },
   { key: 'endowment_plans', name: 'Endowment Plans', color: '#d946ef' },
@@ -71,7 +72,8 @@ const assetFields = [
   { key: 'epf', name: 'EPF', color: '#a855f7' },
   { key: 'ppf', name: 'PPF', color: '#0ea5e9' },
   { key: 'structured_products_debt', name: 'Structured Products (Debt)', color: '#eab308' },
-  { key: 'gold_etfs_funds', name: 'Gold ETFs/Funds', color: '#dc2626' }
+  { key: 'gold_etfs_funds', name: 'Gold ETFs/Funds', color: '#dc2626' },
+  { key: 'bonds', name: 'Bonds', color: '#78716c' }
 ] as const;
 
 export function IndividualAssetChart({ 

@@ -9,6 +9,7 @@ export interface HighMediumRiskAssets {
   private_equity: number;
   equity_mutual_funds: number;
   structured_products_equity: number;
+  us_stocks: number;
 }
 
 // Low risk asset categories
@@ -22,6 +23,7 @@ export interface LowRiskAssets {
   ppf: number;
   structured_products_debt: number;
   gold_etfs_funds: number;
+  bonds: number;
 }
 
 // Complete financial entry
@@ -55,6 +57,7 @@ export interface ChartDataPoint {
   private_equity: number;
   equity_mutual_funds: number;
   structured_products_equity: number;
+  us_stocks: number;
   bank_balance: number;
   debt_mutual_funds: number;
   endowment_plans: number;
@@ -64,6 +67,7 @@ export interface ChartDataPoint {
   ppf: number;
   structured_products_debt: number;
   gold_etfs_funds: number;
+  bonds: number;
 }
 
 export interface RiskDistribution {

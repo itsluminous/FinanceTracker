@@ -106,6 +106,7 @@ export async function PUT(
       if (high_medium_risk.private_equity !== undefined) updateData.private_equity = high_medium_risk.private_equity;
       if (high_medium_risk.equity_mutual_funds !== undefined) updateData.equity_mutual_funds = high_medium_risk.equity_mutual_funds;
       if (high_medium_risk.structured_products_equity !== undefined) updateData.structured_products_equity = high_medium_risk.structured_products_equity;
+      if (high_medium_risk.us_stocks !== undefined) updateData.us_stocks = high_medium_risk.us_stocks;
     }
 
     if (low_risk) {
@@ -118,6 +119,7 @@ export async function PUT(
       if (low_risk.ppf !== undefined) updateData.ppf = low_risk.ppf;
       if (low_risk.structured_products_debt !== undefined) updateData.structured_products_debt = low_risk.structured_products_debt;
       if (low_risk.gold_etfs_funds !== undefined) updateData.gold_etfs_funds = low_risk.gold_etfs_funds;
+      if (low_risk.bonds !== undefined) updateData.bonds = low_risk.bonds;
     }
 
     // Update the entry

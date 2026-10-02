@@ -221,6 +221,7 @@ export async function POST(
         private_equity: high_medium_risk?.private_equity || 0,
         equity_mutual_funds: high_medium_risk?.equity_mutual_funds || 0,
         structured_products_equity: high_medium_risk?.structured_products_equity || 0,
+        us_stocks: high_medium_risk?.us_stocks || 0,
         bank_balance: low_risk?.bank_balance || 0,
         debt_mutual_funds: low_risk?.debt_mutual_funds || 0,
         endowment_plans: low_risk?.endowment_plans || 0,
@@ -230,6 +231,7 @@ export async function POST(
         ppf: low_risk?.ppf || 0,
         structured_products_debt: low_risk?.structured_products_debt || 0,
         gold_etfs_funds: low_risk?.gold_etfs_funds || 0,
+        bonds: low_risk?.bonds || 0,
         created_by: user.id,
       })
       .select()

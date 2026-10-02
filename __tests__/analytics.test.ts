@@ -28,7 +28,8 @@ describe('Analytics Functions', () => {
           real_estate_funds: 0,
           private_equity: 0,
           equity_mutual_funds: 0,
-          structured_products_equity: 0
+          structured_products_equity: 0,
+          us_stocks: 0
         },
         low_risk: {
           bank_balance: 50000,
@@ -39,7 +40,8 @@ describe('Analytics Functions', () => {
           epf: 0,
           ppf: 0,
           structured_products_debt: 0,
-          gold_etfs_funds: 0
+          gold_etfs_funds: 0,
+          bonds: 0
         },
         total_high_medium_risk: 150000,
         total_low_risk: 150000,
@@ -61,7 +63,8 @@ describe('Analytics Functions', () => {
           real_estate_funds: 0,
           private_equity: 0,
           equity_mutual_funds: 0,
-          structured_products_equity: 0
+          structured_products_equity: 0,
+          us_stocks: 0
         },
         low_risk: {
           bank_balance: 40000,
@@ -72,7 +75,8 @@ describe('Analytics Functions', () => {
           epf: 0,
           ppf: 0,
           structured_products_debt: 0,
-          gold_etfs_funds: 0
+          gold_etfs_funds: 0,
+          bonds: 0
         },
         total_high_medium_risk: 120000,
         total_low_risk: 120000,
@@ -94,7 +98,8 @@ describe('Analytics Functions', () => {
           real_estate_funds: 0,
           private_equity: 0,
           equity_mutual_funds: 0,
-          structured_products_equity: 0
+          structured_products_equity: 0,
+          us_stocks: 0
         },
         low_risk: {
           bank_balance: 30000,
@@ -105,7 +110,8 @@ describe('Analytics Functions', () => {
           epf: 0,
           ppf: 0,
           structured_products_debt: 0,
-          gold_etfs_funds: 0
+          gold_etfs_funds: 0,
+          bonds: 0
         },
         total_high_medium_risk: 90000,
         total_low_risk: 90000,
@@ -362,7 +368,8 @@ describe('Analytics Functions', () => {
           real_estate_funds: 0,
           private_equity: 0,
           equity_mutual_funds: 0,
-          structured_products_equity: 0
+          structured_products_equity: 0,
+          us_stocks: 0
         },
         low_risk: {
           bank_balance: 0,
@@ -373,7 +380,8 @@ describe('Analytics Functions', () => {
           epf: 0,
           ppf: 0,
           structured_products_debt: 0,
-          gold_etfs_funds: 0
+          gold_etfs_funds: 0,
+          bonds: 0
         },
         total_high_medium_risk: 0,
         total_low_risk: 0,

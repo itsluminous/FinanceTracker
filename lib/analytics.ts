@@ -76,6 +76,7 @@ export function transformToChartData(entries: FinancialEntry[]): ChartDataPoint[
     private_equity: entry.high_medium_risk.private_equity,
     equity_mutual_funds: entry.high_medium_risk.equity_mutual_funds,
     structured_products_equity: entry.high_medium_risk.structured_products_equity,
+    us_stocks: entry.high_medium_risk.us_stocks || 0,
     bank_balance: entry.low_risk.bank_balance,
     debt_mutual_funds: entry.low_risk.debt_mutual_funds,
     endowment_plans: entry.low_risk.endowment_plans,
@@ -84,7 +85,8 @@ export function transformToChartData(entries: FinancialEntry[]): ChartDataPoint[
     epf: entry.low_risk.epf,
     ppf: entry.low_risk.ppf,
     structured_products_debt: entry.low_risk.structured_products_debt,
-    gold_etfs_funds: entry.low_risk.gold_etfs_funds
+    gold_etfs_funds: entry.low_risk.gold_etfs_funds,
+    bonds: entry.low_risk.bonds || 0
   }));
 }
 
@@ -193,6 +195,7 @@ export function aggregateCombinedPortfolio(
     private_equity: number;
     equity_mutual_funds: number;
     structured_products_equity: number;
+    us_stocks: number;
     bank_balance: number;
     debt_mutual_funds: number;
     endowment_plans: number;
@@ -202,6 +205,7 @@ export function aggregateCombinedPortfolio(
     ppf: number;
     structured_products_debt: number;
     gold_etfs_funds: number;
+    bonds: number;
   }>();
   
   profileEntries.forEach(entries => {
@@ -227,6 +231,7 @@ export function aggregateCombinedPortfolio(
         private_equity: 0,
         equity_mutual_funds: 0,
         structured_products_equity: 0,
+        us_stocks: 0,
         bank_balance: 0,
         debt_mutual_funds: 0,
         endowment_plans: 0,
@@ -235,7 +240,8 @@ export function aggregateCombinedPortfolio(
         epf: 0,
         ppf: 0,
         structured_products_debt: 0,
-        gold_etfs_funds: 0
+        gold_etfs_funds: 0,
+        bonds: 0
       };
       
       dateMap.set(dateKey, {
@@ -252,6 +258,7 @@ export function aggregateCombinedPortfolio(
         private_equity: existing.private_equity + entry.high_medium_risk.private_equity,
         equity_mutual_funds: existing.equity_mutual_funds + entry.high_medium_risk.equity_mutual_funds,
         structured_products_equity: existing.structured_products_equity + entry.high_medium_risk.structured_products_equity,
+        us_stocks: existing.us_stocks + (entry.high_medium_risk.us_stocks || 0),
         bank_balance: existing.bank_balance + entry.low_risk.bank_balance,
         debt_mutual_funds: existing.debt_mutual_funds + entry.low_risk.debt_mutual_funds,
         endowment_plans: existing.endowment_plans + entry.low_risk.endowment_plans,
@@ -260,7 +267,8 @@ export function aggregateCombinedPortfolio(
         epf: existing.epf + entry.low_risk.epf,
         ppf: existing.ppf + entry.low_risk.ppf,
         structured_products_debt: existing.structured_products_debt + entry.low_risk.structured_products_debt,
-        gold_etfs_funds: existing.gold_etfs_funds + entry.low_risk.gold_etfs_funds
+        gold_etfs_funds: existing.gold_etfs_funds + entry.low_risk.gold_etfs_funds,
+        bonds: existing.bonds + (entry.low_risk.bonds || 0)
       });
     });
   });

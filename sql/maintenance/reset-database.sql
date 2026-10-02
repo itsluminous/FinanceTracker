@@ -2,7 +2,7 @@
 -- COMPLETE DATABASE RESET SCRIPT
 -- ============================================================================
 -- WARNING: This will DELETE ALL DATA and DROP ALL TABLES
--- Use this to start fresh with database-setup.sql
+-- Use this to start fresh with sql/database-setup.sql
 -- ============================================================================
 
 -- Step 1: Drop all triggers first (to avoid dependency issues)
@@ -68,8 +68,8 @@ SELECT COUNT(*) as user_count FROM auth.users;
 -- NEXT STEPS AFTER RUNNING THIS SCRIPT:
 -- ============================================================================
 -- 1. Verify all checks above return 0 rows/count
--- 2. Run the complete database-setup.sql file
--- 3. Verify the trigger was created with verify-trigger-setup.sql
+-- 2. Run the complete sql/database-setup.sql file
+-- 3. Verify the on_auth_user_created trigger exists (see the trigger check query above; expect 1 row)
 -- 4. Test signup flow
 -- ============================================================================
 

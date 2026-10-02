@@ -123,7 +123,8 @@ export async function GET(request: NextRequest) {
           real_estate_funds: entry.real_estate_funds || 0,
           private_equity: entry.private_equity || 0,
           equity_mutual_funds: entry.equity_mutual_funds || 0,
-          structured_products_equity: entry.structured_products_equity || 0
+          structured_products_equity: entry.structured_products_equity || 0,
+          us_stocks: entry.us_stocks || 0
         },
         low_risk: {
           bank_balance: entry.bank_balance || 0,
@@ -134,7 +135,8 @@ export async function GET(request: NextRequest) {
           epf: entry.epf || 0,
           ppf: entry.ppf || 0,
           structured_products_debt: entry.structured_products_debt || 0,
-          gold_etfs_funds: entry.gold_etfs_funds || 0
+          gold_etfs_funds: entry.gold_etfs_funds || 0,
+          bonds: entry.bonds || 0
         },
         total_high_medium_risk: entry.total_high_medium_risk || 0,
         total_low_risk: entry.total_low_risk || 0,

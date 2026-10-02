@@ -36,6 +36,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
     private_equity: 0,
     equity_mutual_funds: 0,
     structured_products_equity: 0,
+    us_stocks: 0,
   });
   const [lowRisk, setLowRisk] = useState<LowRiskAssets>({
     bank_balance: 0,
@@ -47,6 +48,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
     ppf: 0,
     structured_products_debt: 0,
     gold_etfs_funds: 0,
+    bonds: 0,
   });
   const [isLoading, setIsLoading] = useState(false);
   const [isLoadingLatest, setIsLoadingLatest] = useState(true);
@@ -82,8 +84,8 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
         if (draft) {
           const parsed = JSON.parse(draft);
           if (parsed.entryDate) setEntryDate(parsed.entryDate);
-          if (parsed.highMediumRisk) setHighMediumRisk(parsed.highMediumRisk);
-          if (parsed.lowRisk) setLowRisk(parsed.lowRisk);
+          if (parsed.highMediumRisk) setHighMediumRisk(prev => ({ ...prev, ...parsed.highMediumRisk }));
+          if (parsed.lowRisk) setLowRisk(prev => ({ ...prev, ...parsed.lowRisk }));
         }
       } catch (error) {
         console.error('Error loading draft:', error);
@@ -155,6 +157,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             private_equity: data.entry.private_equity || 0,
             equity_mutual_funds: data.entry.equity_mutual_funds || 0,
             structured_products_equity: data.entry.structured_products_equity || 0,
+            us_stocks: data.entry.us_stocks || 0,
           });
           setLowRisk({
             bank_balance: data.entry.bank_balance || 0,
@@ -166,6 +169,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             ppf: data.entry.ppf || 0,
             structured_products_debt: data.entry.structured_products_debt || 0,
             gold_etfs_funds: data.entry.gold_etfs_funds || 0,
+            bonds: data.entry.bonds || 0,
           });
         }
       }
@@ -211,6 +215,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             private_equity: data.entry.private_equity || 0,
             equity_mutual_funds: data.entry.equity_mutual_funds || 0,
             structured_products_equity: data.entry.structured_products_equity || 0,
+            us_stocks: data.entry.us_stocks || 0,
           });
           setLowRisk({
             bank_balance: data.entry.bank_balance || 0,
@@ -222,6 +227,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             ppf: data.entry.ppf || 0,
             structured_products_debt: data.entry.structured_products_debt || 0,
             gold_etfs_funds: data.entry.gold_etfs_funds || 0,
+            bonds: data.entry.bonds || 0,
           });
           
           toast({
@@ -256,6 +262,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             private_equity: beforeData.entry.private_equity || 0,
             equity_mutual_funds: beforeData.entry.equity_mutual_funds || 0,
             structured_products_equity: beforeData.entry.structured_products_equity || 0,
+            us_stocks: beforeData.entry.us_stocks || 0,
           });
           setLowRisk({
             bank_balance: beforeData.entry.bank_balance || 0,
@@ -267,6 +274,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
             ppf: beforeData.entry.ppf || 0,
             structured_products_debt: beforeData.entry.structured_products_debt || 0,
             gold_etfs_funds: beforeData.entry.gold_etfs_funds || 0,
+            bonds: beforeData.entry.bonds || 0,
           });
           
           const lastEntryDate = formatDate(beforeData.entry.entry_date);
@@ -631,6 +639,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
       label: 'Structured Products - Equity',
       value: highMediumRisk.structured_products_equity,
     },
+    { name: 'us_stocks', label: 'US Stocks', value: highMediumRisk.us_stocks },
   ];
 
   const lowRiskFields = [
@@ -651,6 +660,7 @@ export function FinancialEntryForm({ profileId, onSuccess }: FinancialEntryFormP
       value: lowRisk.structured_products_debt,
     },
     { name: 'gold_etfs_funds', label: 'Gold ETFs / Funds', value: lowRisk.gold_etfs_funds },
+    { name: 'bonds', label: 'Bonds', value: lowRisk.bonds },
   ];
 
   return (
